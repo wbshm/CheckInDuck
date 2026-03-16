@@ -27,19 +27,56 @@ struct CreateTaskView: View {
                     Button("Choose Apps") {
                         isPresentingAppPicker = true
                     }
+
+                    if !selectedApps.applicationTokens.isEmpty {
+                        ForEach(Array(selectedApps.applicationTokens), id: \.self) { token in
+                            Label(token)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 2)
+                        }
+                    } else {
+                        Text("No apps selected yet.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if !selectedApps.categoryTokens.isEmpty || !selectedApps.webDomainTokens.isEmpty {
+                        Text("Categories: \(selectedApps.categoryTokens.count), Websites: \(selectedApps.webDomainTokens.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Deadline") {
-                    Stepper("Hour: \(viewModel.deadlineHour)", value: $viewModel.deadlineHour, in: 0...23)
-                    Stepper("Minute: \(viewModel.deadlineMinute)", value: $viewModel.deadlineMinute, in: 0...59)
+                    DatePicker(
+                        "Time",
+                        selection: deadlineDateBinding,
+                        displayedComponents: .hourAndMinute
+                    )
                 }
 
                 Section("Auto Check-in") {
-                    Stepper(
-                        "Mark completed after \(viewModel.usageThresholdMinutes) min of app usage",
-                        value: $viewModel.usageThresholdMinutes,
-                        in: 1...180
-                    )
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Mark completed after app usage")
+                            Spacer()
+                            Text("\(viewModel.usageThresholdMinutes) min")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(
+                            value: usageThresholdMinutesBinding,
+                            in: 1...60,
+                            step: 1
+                        )
+                        HStack {
+                            Text("1 min")
+                            Spacer()
+                            Text("60 min")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationTitle("Create Task")
@@ -73,6 +110,31 @@ struct CreateTaskView: View {
             selectedApps.categoryTokens.count +
             selectedApps.webDomainTokens.count
         return count == 0 ? "None" : "\(count)"
+    }
+
+    private var deadlineDateBinding: Binding<Date> {
+        Binding(
+            get: {
+                var components = DateComponents()
+                components.hour = viewModel.deadlineHour
+                components.minute = viewModel.deadlineMinute
+                return Calendar.current.date(from: components) ?? Date()
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                viewModel.deadlineHour = components.hour ?? 21
+                viewModel.deadlineMinute = components.minute ?? 0
+            }
+        )
+    }
+
+    private var usageThresholdMinutesBinding: Binding<Double> {
+        Binding(
+            get: { Double(viewModel.usageThresholdMinutes) },
+            set: { newValue in
+                viewModel.usageThresholdMinutes = Int(newValue.rounded())
+            }
+        )
     }
 
     private func syncSelectionData() {

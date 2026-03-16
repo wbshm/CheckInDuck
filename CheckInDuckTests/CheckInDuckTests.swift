@@ -192,6 +192,35 @@ struct CheckInDuckTests {
         let storedRecords = recordStore.loadAll()
         #expect(storedRecords.contains(where: { $0.taskId == orphanTaskID }) == false)
     }
+
+    @Test
+    func reminderScheduleIncludesDeadlineTrigger() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let referenceDate = Date(timeIntervalSince1970: 1_710_000_000)
+
+        let service = ReminderSchedulingService(
+            calendar: calendar,
+            nowProvider: { referenceDate }
+        )
+        let task = HabitTask(
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 22, minute: 30),
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [30])
+        )
+
+        let components = service.reminderScheduleComponents(
+            for: task,
+            referenceDate: referenceDate
+        )
+        let offsets = Set(components.map(\.offsetMinutes))
+
+        #expect(offsets.contains(30))
+        #expect(offsets.contains(0))
+    }
 }
 
 private final class InMemoryKeyValueStore: KeyValueStoring {

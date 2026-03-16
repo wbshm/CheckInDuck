@@ -60,9 +60,10 @@ final class ReminderSchedulingService: ReminderScheduling {
             return []
         }
 
-        let validOffsets = task.reminderConfig.offsetsInMinutes.filter { offset in
+        let positiveOffsets = task.reminderConfig.offsetsInMinutes.filter { offset in
             offset > 0 && offset < 24 * 60
         }
+        let validOffsets = Array(Set(positiveOffsets + [0])).sorted(by: >)
 
         return validOffsets.compactMap { offset in
             guard let reminderDate = calendar.date(byAdding: .minute, value: -offset, to: deadlineToday) else {
