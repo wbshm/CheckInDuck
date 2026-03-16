@@ -117,6 +117,81 @@ struct CheckInDuckTests {
 
         #expect(parsed == taskID)
     }
+
+    @MainActor
+    @Test
+    func evaluateDailyStatusesIgnoresCompletionEventsForUnknownTasks() async throws {
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let monitoring = MockAppUsageMonitoring()
+        let reminder = NoopReminderScheduling()
+        let knownTask = HabitTask(
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 23, minute: 0),
+            usageThresholdSeconds: 60,
+            isEnabled: true
+        )
+        taskStore.add(knownTask)
+
+        let unknownTaskID = UUID()
+        let completionEvents = StubAppUsageCompletionEvents(completedTaskIDs: [unknownTaskID])
+        let viewModel = TodayViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: .current,
+            reminderScheduling: reminder,
+            appUsageMonitoring: monitoring,
+            appUsageCompletionEvents: completionEvents
+        )
+
+        viewModel.evaluateDailyStatuses()
+        let storedRecords = recordStore.loadAll()
+        #expect(storedRecords.contains(where: { $0.taskId == unknownTaskID }) == false)
+    }
+
+    @MainActor
+    @Test
+    func initPrunesOrphanDailyRecords() async throws {
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let monitoring = MockAppUsageMonitoring()
+        let reminder = NoopReminderScheduling()
+        let completionEvents = StubAppUsageCompletionEvents()
+
+        let knownTask = HabitTask(
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 23, minute: 0),
+            usageThresholdSeconds: 60,
+            isEnabled: true
+        )
+        taskStore.add(knownTask)
+
+        let orphanTaskID = UUID()
+        recordStore.add(
+            DailyRecord(
+                taskId: orphanTaskID,
+                date: Date(),
+                status: .completed,
+                completionSource: .appUsageThreshold
+            )
+        )
+
+        _ = TodayViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: .current,
+            reminderScheduling: reminder,
+            appUsageMonitoring: monitoring,
+            appUsageCompletionEvents: completionEvents
+        )
+
+        let storedRecords = recordStore.loadAll()
+        #expect(storedRecords.contains(where: { $0.taskId == orphanTaskID }) == false)
+    }
 }
 
 private final class InMemoryKeyValueStore: KeyValueStoring {
@@ -163,7 +238,13 @@ private struct NoopReminderScheduling: ReminderScheduling {
 }
 
 private struct StubAppUsageCompletionEvents: AppUsageCompletionEventReading {
-    func consumeCompletedTaskIDs() -> [UUID] { [] }
+    private let completedTaskIDs: [UUID]
+
+    init(completedTaskIDs: [UUID] = []) {
+        self.completedTaskIDs = completedTaskIDs
+    }
+
+    func consumeCompletedTaskIDs() -> [UUID] { completedTaskIDs }
 }
 
 private func waitUntil(

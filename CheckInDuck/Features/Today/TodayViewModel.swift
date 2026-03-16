@@ -47,6 +47,7 @@ final class TodayViewModel: ObservableObject {
 
     func reload() {
         tasks = taskStore.loadAll().sorted { $0.createdAt < $1.createdAt }
+        pruneOrphanRecordsIfNeeded(validTaskIDs: Set(tasks.map(\.id)))
         records = dailyRecordStore.loadAll()
     }
 
@@ -192,9 +193,32 @@ final class TodayViewModel: ObservableObject {
         if !completedTaskIDs.isEmpty {
             print("TodayViewModel: consuming app-usage completion events count=\(completedTaskIDs.count)")
         }
+        let validTaskIDs = Set(tasks.map(\.id))
         for taskID in completedTaskIDs {
+            guard validTaskIDs.contains(taskID) else {
+                print("TodayViewModel: ignore completion event for unknown task \(taskID.uuidString)")
+                Task {
+                    await appUsageMonitoring.stopMonitoring(taskID: taskID)
+                }
+                continue
+            }
             markCompleted(taskID: taskID, source: .appUsageThreshold)
         }
+    }
+
+    private func pruneOrphanRecordsIfNeeded(validTaskIDs: Set<UUID>) {
+        let existingRecords = dailyRecordStore.loadAll()
+        let filteredRecords = existingRecords.filter { validTaskIDs.contains($0.taskId) }
+        guard filteredRecords.count != existingRecords.count else { return }
+
+        let orphanTaskIDs = Set(existingRecords.map(\.taskId)).subtracting(validTaskIDs)
+        dailyRecordStore.saveAll(filteredRecords)
+        for taskID in orphanTaskIDs {
+            Task {
+                await appUsageMonitoring.stopMonitoring(taskID: taskID)
+            }
+        }
+        print("TodayViewModel: pruned orphan records count=\(existingRecords.count - filteredRecords.count)")
     }
 
     private func monitoringFingerprint(for task: HabitTask) -> String {

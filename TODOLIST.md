@@ -9,7 +9,7 @@
 - `⬜ 未开始`
 
 ## 总览进度
-- 当前总体进度：`94%`
+- 当前总体进度：`95%`
 - 已完成：`19/23`
 - 进行中：`2/23`
 - 未开始：`2/23`
@@ -37,7 +37,7 @@
 | T17 | StoreKit 订阅接入 | ✅ 已完成 | 100% | 商品/购买/恢复/同步完整 | T16 之后 |
 | T18 | 测试体系 | ✅ 已完成 | 100% | 关键路径单测可回归 | T03、T04、T07、T11 |
 | T19 | 代码 Review 轮次 | ✅ 已完成 | 100% | 问题清单与修复闭环 | T05-T18 之后 |
-| T20 | Debug 轮次 | 🟡 进行中 | 95% | 关键 bug 可复现可追溯 | T19 之后 |
+| T20 | Debug 轮次 | 🟡 进行中 | 97% | 关键 bug 可复现可追溯 | T19 之后 |
 | T21 | 重构与清理 | ⬜ 未开始 | 0% | 提升可维护性 | T20 之后 |
 | T22 | README 与开发文档 | ⬜ 未开始 | 0% | 新成员可独立构建开发 | T21 之后 |
 | T23 | 分阶段执行与里程碑验收 | 🟡 进行中 | 65% | 阶段验收记录完整 | 全程 |
@@ -79,6 +79,9 @@
 - 对齐参考项目 `ScreenLimit`：修复 DeviceActivity Monitor 扩展 `Info.plist` 扩展点标识为 `com.apple.deviceactivity.monitor-extension`
 - 修复监控阈值构造：`DeviceActivityEvent` 从秒粒度改为分钟粒度（向上取整），避免秒级配置不触发阈值回调
 - 新增回归测试：`thresholdEventUsesMinuteGranularity`
+- 修复历史 `Unknown Task`：启动时自动清理 orphan daily records（`record.taskId` 无对应 task）
+- 修复 stale completion event：对不存在任务的自动完成事件直接忽略，并尝试停止对应监控 activity
+- 新增回归测试：`initPrunesOrphanDailyRecords`、`evaluateDailyStatusesIgnoresCompletionEventsForUnknownTasks`
 
 ## 当前已落地（核对清单）
 
