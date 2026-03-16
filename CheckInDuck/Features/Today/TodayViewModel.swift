@@ -1,0 +1,204 @@
+import Foundation
+import Combine
+
+@MainActor
+final class TodayViewModel: ObservableObject {
+    @Published private(set) var tasks: [HabitTask] = []
+    @Published private(set) var records: [DailyRecord] = []
+
+    private let taskStore: TaskStore
+    private let dailyRecordStore: DailyRecordStore
+    private let calendar: Calendar
+    private let statusCalculator: DailyStatusCalculator
+    private let reminderScheduling: ReminderScheduling
+    private let appUsageMonitoring: AppUsageMonitoring
+    private let appUsageCompletionEvents: AppUsageCompletionEventReading
+    private var monitoringFingerprintByTaskID: [UUID: String] = [:]
+
+    convenience init() {
+        self.init(
+            taskStore: TaskStore(),
+            dailyRecordStore: DailyRecordStore(),
+            calendar: .current,
+            reminderScheduling: ReminderSchedulingService(),
+            appUsageMonitoring: AppUsageMonitoringService(),
+            appUsageCompletionEvents: AppUsageCompletionEventStore()
+        )
+    }
+
+    init(
+        taskStore: TaskStore,
+        dailyRecordStore: DailyRecordStore,
+        calendar: Calendar,
+        reminderScheduling: ReminderScheduling,
+        appUsageMonitoring: AppUsageMonitoring,
+        appUsageCompletionEvents: AppUsageCompletionEventReading
+    ) {
+        self.taskStore = taskStore
+        self.dailyRecordStore = dailyRecordStore
+        self.calendar = calendar
+        self.statusCalculator = DailyStatusCalculator(calendar: calendar)
+        self.reminderScheduling = reminderScheduling
+        self.appUsageMonitoring = appUsageMonitoring
+        self.appUsageCompletionEvents = appUsageCompletionEvents
+        reload()
+        startMonitoringForEnabledTasks()
+    }
+
+    func reload() {
+        tasks = taskStore.loadAll().sorted { $0.createdAt < $1.createdAt }
+        records = dailyRecordStore.loadAll()
+    }
+
+    func addTask(_ task: HabitTask) {
+        taskStore.add(task)
+        reload()
+        scheduleRemindersIfNeeded(for: task)
+        startMonitoringIfNeeded(for: task)
+    }
+
+    func deleteTask(id: UUID) {
+        taskStore.delete(id: id)
+        dailyRecordStore.deleteAll(taskId: id)
+        reload()
+        cancelReminders(for: id)
+        stopMonitoring(taskID: id)
+        monitoringFingerprintByTaskID.removeValue(forKey: id)
+    }
+
+    func toggleEnabled(task: HabitTask) {
+        var updated = task
+        updated.isEnabled.toggle()
+        updated.updatedAt = Date()
+        taskStore.update(updated)
+        reload()
+        if updated.isEnabled {
+            scheduleRemindersIfNeeded(for: updated)
+            startMonitoringIfNeeded(for: updated)
+        } else {
+            cancelReminders(for: updated.id)
+            stopMonitoring(taskID: updated.id)
+            monitoringFingerprintByTaskID.removeValue(forKey: updated.id)
+        }
+    }
+
+    func markCompleted(taskID: UUID, source: CompletionSource) {
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        if var existing = todayRecord(for: taskID) {
+            existing.status = .completed
+            existing.completionSource = source
+            existing.completedAt = now
+            dailyRecordStore.update(existing)
+        } else {
+            let record = DailyRecord(
+                taskId: taskID,
+                date: today,
+                status: .completed,
+                completionSource: source,
+                completedAt: now
+            )
+            dailyRecordStore.add(record)
+        }
+        reload()
+    }
+
+    func evaluateDailyStatuses(now: Date = Date()) {
+        syncAppUsageCompletions()
+
+        let allRecords = dailyRecordStore.loadAll()
+        let missingRecords = statusCalculator.missingRecordsToInsert(
+            for: tasks,
+            existingRecords: allRecords,
+            now: now
+        )
+
+        if !missingRecords.isEmpty {
+            dailyRecordStore.saveAll(allRecords + missingRecords)
+        }
+        reload()
+    }
+
+    func refreshForForeground() {
+        reload()
+        evaluateDailyStatuses()
+    }
+
+    func status(for task: HabitTask) -> DailyTaskStatus {
+        statusCalculator.status(for: task, records: records)
+    }
+
+    func deadlineText(for task: HabitTask) -> String {
+        task.deadline.displayText
+    }
+
+    var completedCount: Int {
+        tasks.filter { status(for: $0) == .completed }.count
+    }
+
+    var missedCount: Int {
+        tasks.filter { status(for: $0) == .missed }.count
+    }
+
+    var pendingCount: Int {
+        tasks.filter { status(for: $0) == .pending }.count
+    }
+
+    private func todayRecord(for taskID: UUID, on date: Date = Date()) -> DailyRecord? {
+        records.first(where: { $0.taskId == taskID && calendar.isDate($0.date, inSameDayAs: date) })
+    }
+
+    private func scheduleRemindersIfNeeded(for task: HabitTask) {
+        guard task.isEnabled else { return }
+        Task {
+            await reminderScheduling.scheduleReminders(for: task)
+        }
+    }
+
+    private func cancelReminders(for taskID: UUID) {
+        Task {
+            await reminderScheduling.cancelReminders(for: taskID)
+        }
+    }
+
+    private func startMonitoringForEnabledTasks() {
+        for task in tasks where task.isEnabled {
+            startMonitoringIfNeeded(for: task)
+        }
+    }
+
+    private func startMonitoringIfNeeded(for task: HabitTask) {
+        guard task.isEnabled else { return }
+        guard task.appSelectionData != nil else { return }
+        let fingerprint = monitoringFingerprint(for: task)
+        if monitoringFingerprintByTaskID[task.id] == fingerprint {
+            return
+        }
+        monitoringFingerprintByTaskID[task.id] = fingerprint
+        Task {
+            await appUsageMonitoring.startMonitoring(task: task)
+        }
+    }
+
+    private func stopMonitoring(taskID: UUID) {
+        monitoringFingerprintByTaskID.removeValue(forKey: taskID)
+        Task {
+            await appUsageMonitoring.stopMonitoring(taskID: taskID)
+        }
+    }
+
+    private func syncAppUsageCompletions() {
+        let completedTaskIDs = appUsageCompletionEvents.consumeCompletedTaskIDs()
+        if !completedTaskIDs.isEmpty {
+            print("TodayViewModel: consuming app-usage completion events count=\(completedTaskIDs.count)")
+        }
+        for taskID in completedTaskIDs {
+            markCompleted(taskID: taskID, source: .appUsageThreshold)
+        }
+    }
+
+    private func monitoringFingerprint(for task: HabitTask) -> String {
+        let selectionHash = task.appSelectionData?.base64EncodedString() ?? "none"
+        return "\(task.id.uuidString)|\(task.isEnabled)|\(task.usageThresholdSeconds)|\(selectionHash)"
+    }
+}

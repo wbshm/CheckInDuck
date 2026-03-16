@@ -1,0 +1,77 @@
+# Xcode 通用忽略项
+## 构建产物
+build/
+DerivedData/
+
+## 临时文件
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+
+## 方案文件
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+project.xcworkspace/
+!default.xcworkspace
+workspace.xcworkspace/
+!default.xcworkspace
+xcshareddata/
+
+# Swift 专属
+## Swift Package Manager
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+*.xcodeproj/xcshareddata/swiftpm/
+
+## Swift 编译缓存
+*.swiftmodule
+*.swiftdoc
+*.o
+*.d
+
+# iOS/macOS 通用
+## 模拟器构建产物
+iphonesimulator/
+watchsimulator/
+appletvsimulator/
+
+## 归档文件
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## 日志文件
+*.log
+
+# 第三方工具/缓存
+## CocoaPods (如果使用)
+Pods/
+!Pods/Podfile
+!Pods/Podfile.lock
+*.xcworkspace/contents.xcworkspacedata
+
+## Carthage (如果使用)
+Carthage/Build/
+
+# 系统/编辑器临时文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
