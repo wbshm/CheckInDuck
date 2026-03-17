@@ -86,6 +86,7 @@
 - Create Task 页细节优化：`Deadline` 改为系统 `DatePicker(.hourAndMinute)`
 - Create Task 页细节优化：已选应用改为图标+标题列表展示（参考 ScreenLimit 的 `Label(token)` 方式）
 - 修复应用选择器交互：改为独立选择页 + 固定 `Save` 按钮，搜索状态下也可直接确认
+- 应用选择器改为“仅单选 App”（不支持多选/分类/网站），并将按钮改为原生 `xmark/checkmark`
 - 修复“到点未完成不提醒”：提醒调度默认补充 `offset=0`（deadline 当刻提醒）
 - 新增回归测试：`reminderScheduleIncludesDeadlineTrigger`
 
