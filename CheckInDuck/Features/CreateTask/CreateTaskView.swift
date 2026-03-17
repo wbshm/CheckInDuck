@@ -97,7 +97,9 @@ struct CreateTaskView: View {
                     .disabled(viewModel.saveButtonDisabled)
                 }
             }
-            .familyActivityPicker(isPresented: $isPresentingAppPicker, selection: $selectedApps)
+            .sheet(isPresented: $isPresentingAppPicker) {
+                AppSelectionPickerSheet(selection: $selectedApps)
+            }
             .onChange(of: selectedApps) { _ in
                 syncSelectionData()
             }
