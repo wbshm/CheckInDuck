@@ -76,8 +76,12 @@ struct SystemNotificationPermissionProvider: NotificationPermissionProviding {
 
     func requestPermission() async -> NotificationPermissionStatus {
         let center = UNUserNotificationCenter.current()
+        var options: UNAuthorizationOptions = [.alert, .badge, .sound]
+        if #available(iOS 15.0, *) {
+            options.insert(.timeSensitive)
+        }
         let granted = await withCheckedContinuation { continuation in
-            center.requestAuthorization(options: [.alert, .badge, .sound]) { approved, _ in
+            center.requestAuthorization(options: options) { approved, _ in
                 continuation.resume(returning: approved)
             }
         }

@@ -89,6 +89,10 @@
 - 应用选择器改为“仅单选 App”（不支持多选/分类/网站），并将按钮改为原生 `xmark/checkmark`
 - 修复“到点未完成不提醒”：提醒调度默认补充 `offset=0`（deadline 当刻提醒）
 - 新增回归测试：`reminderScheduleIncludesDeadlineTrigger`
+- 提醒优先级优化：deadline 当刻通知升级为 `Time Sensitive`（`interruptionLevel = .timeSensitive`，`relevanceScore = 1.0`）
+- 预提醒保持普通优先级（`interruptionLevel = .active`），并在通知授权时追加 `timeSensitive` 选项申请
+- 新增回归测试：`deadlineReminderUsesTimeSensitiveInterruptionLevel`、`preDeadlineReminderUsesActiveInterruptionLevel`
+- 主 App entitlement 增加 `com.apple.developer.usernotifications.time-sensitive`，补齐系统“Time Sensitive Notifications”设置入口前提
 
 ## 当前已落地（核对清单）
 

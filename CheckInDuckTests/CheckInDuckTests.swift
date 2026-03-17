@@ -6,6 +6,7 @@
 import Foundation
 import Testing
 import FamilyControls
+import UserNotifications
 @testable import CheckInDuck
 
 struct CheckInDuckTests {
@@ -220,6 +221,42 @@ struct CheckInDuckTests {
 
         #expect(offsets.contains(30))
         #expect(offsets.contains(0))
+    }
+
+    @Test
+    func deadlineReminderUsesTimeSensitiveInterruptionLevel() async throws {
+        let service = ReminderSchedulingService()
+        let task = HabitTask(
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 22, minute: 30),
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [30])
+        )
+
+        let content = service.makeReminderContent(for: task, offsetMinutes: 0)
+
+        #expect(content.interruptionLevel == UNNotificationInterruptionLevel.timeSensitive)
+        #expect(content.relevanceScore == 1.0)
+    }
+
+    @Test
+    func preDeadlineReminderUsesActiveInterruptionLevel() async throws {
+        let service = ReminderSchedulingService()
+        let task = HabitTask(
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 22, minute: 30),
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [30])
+        )
+
+        let content = service.makeReminderContent(for: task, offsetMinutes: 30)
+
+        #expect(content.interruptionLevel == UNNotificationInterruptionLevel.active)
+        #expect(content.relevanceScore == 0.5)
     }
 }
 

@@ -27,10 +27,7 @@ final class ReminderSchedulingService: ReminderScheduling {
         let triggerComponents = reminderScheduleComponents(for: task)
 
         for (offset, triggerDate) in triggerComponents {
-            let content = UNMutableNotificationContent()
-            content.title = "Task Reminder"
-            content.body = "\(task.name) is due at \(task.deadline.displayText)."
-            content.sound = .default
+            let content = makeReminderContent(for: task, offsetMinutes: offset)
 
             let request = UNNotificationRequest(
                 identifier: reminderIdentifier(taskID: task.id, offsetMinutes: offset),
@@ -72,6 +69,29 @@ final class ReminderSchedulingService: ReminderScheduling {
             let triggerDate = calendar.dateComponents([.hour, .minute], from: reminderDate)
             return (offsetMinutes: offset, triggerDate: triggerDate)
         }
+    }
+
+    func makeReminderContent(for task: HabitTask, offsetMinutes: Int) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        let isDeadlineReminder = offsetMinutes == 0
+
+        if isDeadlineReminder {
+            content.title = "Check-in Due Now"
+            content.body = "\(task.name) deadline reached. Open CheckInDuck now to avoid missing today."
+        } else {
+            content.title = "Task Reminder"
+            content.body = "\(task.name) is due at \(task.deadline.displayText)."
+        }
+
+        content.sound = .default
+        content.threadIdentifier = "task-reminder-\(task.id.uuidString)"
+
+        if #available(iOS 15.0, *) {
+            content.interruptionLevel = isDeadlineReminder ? .timeSensitive : .active
+            content.relevanceScore = isDeadlineReminder ? 1.0 : 0.5
+        }
+
+        return content
     }
 
     private func reminderIdentifier(taskID: UUID, offsetMinutes: Int) -> String {
