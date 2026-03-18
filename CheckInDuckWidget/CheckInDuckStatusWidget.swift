@@ -69,32 +69,52 @@ private struct CheckInDuckStatusWidgetEntryView: View {
         }
     }
 
+    @ViewBuilder
     private var content: some View {
-        VStack(alignment: .leading, spacing: family == .systemSmall ? 12 : 14) {
-            header
+        switch family {
+        case .systemMedium:
+            mediumContent
+        default:
+            smallContent
+        }
+    }
+
+    private var smallContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            smallHeader
 
             if entry.snapshot.tasks.isEmpty {
                 emptyState
             } else {
-                switch family {
-                case .systemMedium:
-                    mediumLayout
-                default:
-                    smallLayout
-                }
+                smallLayout
             }
         }
-        .padding(family == .systemSmall ? 0 : 8)
+        .padding(0)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    @ViewBuilder
-    private var header: some View {
-        switch family {
-        case .systemSmall:
-            smallHeader
-        default:
-            mediumHeader
+    private var mediumContent: some View {
+        GeometryReader { proxy in
+            let horizontalInset: CGFloat = 0 // Adjust the left/right outer padding for the whole 2x4 widget.
+            let verticalInset: CGFloat = 0 // Adjust the top/bottom outer padding for the whole 2x4 widget.
+            let columnSpacing: CGFloat = 16 // Adjust the gap between the overview column and the task list column.
+            let contentWidth = max(proxy.size.width - (horizontalInset * 2) - columnSpacing, 0)
+            let overviewWidth = contentWidth / 3 // Keep the medium widget close to a 1:2 left/right column split.
+
+            HStack(alignment: .top, spacing: columnSpacing) {
+                mediumOverview
+                    .frame(width: overviewWidth, alignment: .leading)
+                    .frame(maxHeight: .infinity, alignment: .leading)
+
+                if entry.snapshot.tasks.isEmpty {
+                    emptyState
+                } else {
+                    mediumLayout
+                }
+            }
+            .padding(.horizontal, horizontalInset)
+            .padding(.vertical, verticalInset)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 
@@ -175,33 +195,51 @@ private struct CheckInDuckStatusWidgetEntryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private var mediumLayout: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ForEach(entry.snapshot.tasks.prefix(4)) { task in
-                HStack(spacing: 10) {
-                    StatusDot(status: task.status)
+    private var mediumOverview: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.12, green: 0.60, blue: 0.93))
+                    .frame(width: 30, height: 30) // Adjust the top-left icon size.
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(task.title)
-                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                            .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.19))
-                            .lineLimit(1)
-
-                        Text(taskSubtitle(for: task))
-                            .font(.system(.caption, design: .rounded))
-                            .foregroundStyle(Color(red: 0.41, green: 0.46, blue: 0.53))
-                            .lineLimit(1)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Text(task.deadlineText)
-                        .font(.system(.caption, design: .rounded).weight(.semibold))
-                        .foregroundStyle(Color(red: 0.45, green: 0.50, blue: 0.57))
-                }
-                .padding(.vertical, 2)
+                Image(systemName: "list.bullet")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
             }
+            .padding(.top, 1) // Adjust the top breathing room above the overview icon.
+
+            Spacer(minLength: 6) // Adjust the flexible gap between the icon area and the bottom summary area.
+
+            Text("\(entry.snapshot.tasks.count)")
+                .font(.system(size: 36, weight: .bold, design: .default))
+                .foregroundStyle(.black)
+                .lineLimit(1)
+
+            Text("CheckInDuck")
+                .font(.system(size: 13, weight: .semibold, design: .default))
+                .foregroundStyle(Color(red: 0.12, green: 0.60, blue: 0.93))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+
+            Text(mediumOverviewDetailText)
+                .font(.system(size: 10, weight: .medium, design: .default))
+                .foregroundStyle(Color(red: 0.42, green: 0.46, blue: 0.52))
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .padding(.top, 2) // Adjust the gap between the title and the compact status summary.
         }
+        .frame(maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var mediumLayout: some View {
+        VStack(alignment: .leading, spacing: 4) { // Adjust the vertical spacing between list rows on the right side.
+            ForEach(Array(mediumListTasks.enumerated()), id: \.element.id) { _, task in
+                MediumTaskRow(task: task)
+                    .frame(height: 31, alignment: .top) // Adjust the per-row height for the right-side task list.
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var emptyState: some View {
@@ -231,7 +269,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
         case .systemSmall:
             Color(red: 0.985, green: 0.985, blue: 0.982)
         default:
-            WidgetCardBackground()
+            Color(red: 0.985, green: 0.985, blue: 0.982)
         }
     }
 
@@ -255,6 +293,24 @@ private struct CheckInDuckStatusWidgetEntryView: View {
         return Array(prioritized.prefix(3))
     }
 
+    private var mediumListTasks: [WidgetTaskStatusSnapshot] {
+        let prioritized = entry.snapshot.tasks.filter { $0.status != .completed }
+        let completed = entry.snapshot.tasks.filter { $0.status == .completed }
+        return Array((prioritized + completed).prefix(4))
+    }
+
+    private var mediumOverviewDetailText: String {
+        if entry.snapshot.missedCount > 0 {
+            return "\(entry.snapshot.missedCount) missed"
+        }
+
+        if entry.snapshot.pendingCount > 0 {
+            return "\(entry.snapshot.pendingCount) pending"
+        }
+
+        return "\(entry.snapshot.completedCount) done"
+    }
+
     private var detailText: String {
         if entry.snapshot.completedCount == entry.snapshot.tasks.count {
             return "Everything for today is complete."
@@ -275,6 +331,52 @@ private struct CheckInDuckStatusWidgetEntryView: View {
             return "Completed today"
         case .missed:
             return "Missed at \(task.deadlineText)"
+        }
+    }
+}
+
+private struct MediumTaskRow: View {
+    let task: WidgetTaskStatusSnapshot
+
+    var body: some View {
+        HStack(spacing: 10) { // Adjust the horizontal spacing between the bullet, title, and trailing status icon.
+            SmallTaskBullet(status: task.status)
+
+            Text(task.title)
+                .font(.system(size: 14, weight: .regular, design: .default))
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            Spacer(minLength: 6) // Adjust the minimum separation between title text and trailing status icon.
+
+            SmallTrailingStatus(status: task.status)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct OverviewStat: View {
+    let label: String
+    let count: Int
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 6) { // Adjust the internal spacing for each compact stat row in the left column.
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+
+            Text(label)
+                .font(.system(size: 9.5, weight: .medium, design: .default))
+                .foregroundStyle(Color(red: 0.34, green: 0.38, blue: 0.44))
+                .lineLimit(1)
+
+            Spacer(minLength: 4)
+
+            Text("\(count)")
+                .font(.system(size: 9.5, weight: .semibold, design: .default))
+                .foregroundStyle(.black)
         }
     }
 }
