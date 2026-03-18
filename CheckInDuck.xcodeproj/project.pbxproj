@@ -7,10 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B41000112F91000100D0F001 /* CheckInDuckWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B41000032F91000100D0F001 /* CheckInDuckWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A31000112F90000100D0F001 /* CheckInDuckDeviceActivityMonitor.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A31000032F90000100D0F001 /* CheckInDuckDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B41000142F91000100D0F001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F006B4082F63A6CC00A17BC8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B410001A2F91000100D0F001;
+			remoteInfo = CheckInDuckWidget;
+		};
 		A31000122F90000100D0F001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F006B4082F63A6CC00A17BC8 /* Project object */;
@@ -41,6 +49,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				B41000112F91000100D0F001 /* CheckInDuckWidget.appex in Embed App Extensions */,
 				A31000112F90000100D0F001 /* CheckInDuckDeviceActivityMonitor.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
@@ -49,6 +58,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B41000032F91000100D0F001 /* CheckInDuckWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CheckInDuckWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A31000012F90000100D0F001 /* CheckInDuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CheckInDuckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A31000022F90000100D0F001 /* CheckInDuckUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CheckInDuckUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A31000032F90000100D0F001 /* CheckInDuckDeviceActivityMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CheckInDuckDeviceActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -56,6 +66,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		B41000062F91000100D0F001 /* CheckInDuckWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CheckInDuckWidget;
+			sourceTree = "<group>";
+		};
 		A31000042F90000100D0F001 /* CheckInDuckTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CheckInDuckTests;
@@ -79,6 +94,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B41000092F91000100D0F001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A31000072F90000100D0F001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -114,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				F006B4122F63A6CC00A17BC8 /* CheckInDuck */,
+				B41000062F91000100D0F001 /* CheckInDuckWidget */,
 				A31000042F90000100D0F001 /* CheckInDuckTests */,
 				A31000052F90000100D0F001 /* CheckInDuckUITests */,
 				A31000062F90000100D0F001 /* CheckInDuckDeviceActivityMonitor */,
@@ -125,6 +148,7 @@
 			isa = PBXGroup;
 			children = (
 				F006B4102F63A6CC00A17BC8 /* CheckInDuck.app */,
+				B41000032F91000100D0F001 /* CheckInDuckWidget.appex */,
 				A31000012F90000100D0F001 /* CheckInDuckTests.xctest */,
 				A31000022F90000100D0F001 /* CheckInDuckUITests.xctest */,
 				A31000032F90000100D0F001 /* CheckInDuckDeviceActivityMonitor.appex */,
@@ -135,6 +159,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B410001A2F91000100D0F001 /* CheckInDuckWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B41000232F91000100D0F001 /* Build configuration list for PBXNativeTarget "CheckInDuckWidget" */;
+			buildPhases = (
+				B410000F2F91000100D0F001 /* Sources */,
+				B41000092F91000100D0F001 /* Frameworks */,
+				B410000C2F91000100D0F001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B41000062F91000100D0F001 /* CheckInDuckWidget */,
+			);
+			name = CheckInDuckWidget;
+			packageProductDependencies = (
+			);
+			productName = CheckInDuckWidget;
+			productReference = B41000032F91000100D0F001 /* CheckInDuckWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A31000182F90000100D0F001 /* CheckInDuckTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A31000212F90000100D0F001 /* Build configuration list for PBXNativeTarget "CheckInDuckTests" */;
@@ -215,6 +261,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				B41000172F91000100D0F001 /* PBXTargetDependency */,
 				A31000172F90000100D0F001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -237,6 +284,9 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					B410001A2F91000100D0F001 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
 					A31000182F90000100D0F001 = {
 						CreatedOnToolsVersion = 26.1.1;
 						TestTargetID = F006B40F2F63A6CC00A17BC8;
@@ -268,6 +318,7 @@
 			projectRoot = "";
 			targets = (
 				F006B40F2F63A6CC00A17BC8 /* CheckInDuck */,
+				B410001A2F91000100D0F001 /* CheckInDuckWidget */,
 				A31000182F90000100D0F001 /* CheckInDuckTests */,
 				A31000192F90000100D0F001 /* CheckInDuckUITests */,
 				A310001A2F90000100D0F001 /* CheckInDuckDeviceActivityMonitor */,
@@ -276,6 +327,13 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		B410000C2F91000100D0F001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A310000A2F90000100D0F001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -307,6 +365,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B410000F2F91000100D0F001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A310000D2F90000100D0F001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -338,6 +403,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		B41000172F91000100D0F001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B410001A2F91000100D0F001 /* CheckInDuckWidget */;
+			targetProxy = B41000142F91000100D0F001 /* PBXContainerItemProxy */;
+		};
 		A31000152F90000100D0F001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F006B40F2F63A6CC00A17BC8 /* CheckInDuck */;
@@ -356,6 +426,60 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		B410001F2F91000100D0F001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = CheckInDuckWidget/CheckInDuckWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U63Y469ZH6;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/CheckInDuckWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wang.CheckInDuck.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B41000202F91000100D0F001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = CheckInDuckWidget/CheckInDuckWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U63Y469ZH6;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/CheckInDuckWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wang.CheckInDuck.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		A310001B2F90000100D0F001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -699,6 +823,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B41000232F91000100D0F001 /* Build configuration list for PBXNativeTarget "CheckInDuckWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B410001F2F91000100D0F001 /* Debug */,
+				B41000202F91000100D0F001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A31000212F90000100D0F001 /* Build configuration list for PBXNativeTarget "CheckInDuckTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

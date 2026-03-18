@@ -4,7 +4,7 @@ final class TaskStore {
     private let defaults: KeyValueStoring
     private let storageKey = "habit_tasks_v1"
 
-    init(defaults: KeyValueStoring = UserDefaults.standard) {
+    init(defaults: KeyValueStoring = SharedDefaultsStore()) {
         self.defaults = defaults
     }
 
@@ -14,6 +14,7 @@ final class TaskStore {
 
     func saveAll(_ tasks: [HabitTask]) {
         CodableStore.save(value: tasks, key: storageKey, defaults: defaults)
+        WidgetTimelineReloader.reloadAll()
     }
 
     func add(_ task: HabitTask) {

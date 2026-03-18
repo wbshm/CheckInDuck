@@ -4,7 +4,7 @@ final class DailyRecordStore {
     private let defaults: KeyValueStoring
     private let storageKey = "daily_records_v1"
 
-    init(defaults: KeyValueStoring = UserDefaults.standard) {
+    init(defaults: KeyValueStoring = SharedDefaultsStore()) {
         self.defaults = defaults
     }
 
@@ -14,6 +14,7 @@ final class DailyRecordStore {
 
     func saveAll(_ records: [DailyRecord]) {
         CodableStore.save(value: records, key: storageKey, defaults: defaults)
+        WidgetTimelineReloader.reloadAll()
     }
 
     func add(_ record: DailyRecord) {
