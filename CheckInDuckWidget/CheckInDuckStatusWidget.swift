@@ -52,6 +52,7 @@ private struct CheckInDuckStatusEntry: TimelineEntry {
 
 private struct CheckInDuckStatusWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
 
     let entry: CheckInDuckStatusEntry
 
@@ -159,14 +160,14 @@ private struct CheckInDuckStatusWidgetEntryView: View {
             // 应用名称文本
             Text("CheckInDuck")
                 .font(.system(size: 15, weight: .semibold)) // 字体大小15，半粗体
-                .foregroundStyle(Color(red: 0.12, green: 0.60, blue: 0.93)) // 蓝色文字
+                .foregroundStyle(accentTextColor) // 蓝色文字
                 .lineLimit(1) // 限制单行显示
                 .minimumScaleFactor(0.72) // 文字最小缩放比例（防止文字溢出）
             Spacer(minLength: 4) // 最小间距4的空白分隔，推挤右侧数字到右边
             // 今日任务总数文本
             Text("\(entry.snapshot.tasks.count)")
                 .font(.system(size: 22, weight: .bold)) // 字体大小22，粗体
-                .foregroundStyle(.black) // 黑色文字
+                .foregroundStyle(primaryTextColor) // 深浅色模式下都可读的主文字颜色
         }
         .padding(.top, 10)
     }
@@ -179,7 +180,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
 
                     Text(task.title)
                         .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(primaryTextColor)
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .minimumScaleFactor(1)
@@ -199,7 +200,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack {
                 Circle()
-                    .fill(Color(red: 0.12, green: 0.60, blue: 0.93))
+                    .fill(accentTextColor)
                     .frame(width: 30, height: 30) // Adjust the top-left icon size.
 
                 Image(systemName: "list.bullet")
@@ -212,18 +213,18 @@ private struct CheckInDuckStatusWidgetEntryView: View {
 
             Text("\(entry.snapshot.tasks.count)")
                 .font(.system(size: 36, weight: .bold, design: .default))
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
                 .lineLimit(1)
 
             Text("CheckInDuck")
                 .font(.system(size: 13, weight: .semibold, design: .default))
-                .foregroundStyle(Color(red: 0.12, green: 0.60, blue: 0.93))
+                .foregroundStyle(accentTextColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
 
             Text(mediumOverviewDetailText)
                 .font(.system(size: 10, weight: .medium, design: .default))
-                .foregroundStyle(Color(red: 0.42, green: 0.46, blue: 0.52))
+                .foregroundStyle(secondaryTextColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
                 .padding(.top, 2) // Adjust the gap between the title and the compact status summary.
@@ -265,12 +266,31 @@ private struct CheckInDuckStatusWidgetEntryView: View {
 
     @ViewBuilder
     private var widgetBackground: some View {
-        switch family {
-        case .systemSmall:
-            Color(red: 0.985, green: 0.985, blue: 0.982)
-        default:
-            Color(red: 0.985, green: 0.985, blue: 0.982)
-        }
+        widgetBackgroundColor
+    }
+
+    private var accentTextColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.37, green: 0.74, blue: 1.00)
+            : Color(red: 0.12, green: 0.60, blue: 0.93)
+    }
+
+    private var primaryTextColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.96, green: 0.97, blue: 0.98)
+            : .black
+    }
+
+    private var secondaryTextColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.64, green: 0.68, blue: 0.74)
+            : Color(red: 0.42, green: 0.46, blue: 0.52)
+    }
+
+    private var widgetBackgroundColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.13, green: 0.14, blue: 0.16)
+            : Color(red: 0.985, green: 0.985, blue: 0.982)
     }
 
     private var summaryText: String {
@@ -344,7 +364,7 @@ private struct MediumTaskRow: View {
 
             Text(task.title)
                 .font(.system(size: 14, weight: .regular, design: .default))
-                .foregroundStyle(.black)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
@@ -369,14 +389,14 @@ private struct OverviewStat: View {
 
             Text(label)
                 .font(.system(size: 9.5, weight: .medium, design: .default))
-                .foregroundStyle(Color(red: 0.34, green: 0.38, blue: 0.44))
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
 
             Spacer(minLength: 4)
 
             Text("\(count)")
                 .font(.system(size: 9.5, weight: .semibold, design: .default))
-                .foregroundStyle(.black)
+                .foregroundStyle(.primary)
         }
     }
 }
