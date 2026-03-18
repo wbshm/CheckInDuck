@@ -43,6 +43,9 @@
 "Processing purchase..." = "正在处理购买...";
 "Restoring purchases..." = "正在恢复购买...";
 "Diagnostics" = "诊断";
+"Language" = "语言";
+"App Language" = "App 语言";
+"Opens CheckInDuck in the system Settings app. Change Preferred Language there." = "将在系统“设置”中打开 CheckInDuck。请在那里修改“首选语言”。";
 "Refresh Diagnostics" = "刷新诊断";
 "App Group Container" = "App Group 容器";
 "Monitored Activities" = "监控活动";

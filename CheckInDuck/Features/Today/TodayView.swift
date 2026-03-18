@@ -67,9 +67,9 @@ struct TodayView: View {
     private var summarySection: some View {
         Section("Summary") {
             HStack(spacing: 8) {
-                SummaryChip(title: "Pending", value: viewModel.pendingCount, color: .orange)
-                SummaryChip(title: "Completed", value: viewModel.completedCount, color: .green)
-                SummaryChip(title: "Missed", value: viewModel.missedCount, color: .red)
+                SummaryChip(title: L10n.tr("status.pending"), value: viewModel.pendingCount, color: .orange)
+                SummaryChip(title: L10n.tr("status.completed"), value: viewModel.completedCount, color: .green)
+                SummaryChip(title: L10n.tr("status.missed"), value: viewModel.missedCount, color: .red)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

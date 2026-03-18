@@ -7,6 +7,11 @@ protocol ReminderScheduling {
 }
 
 final class ReminderSchedulingService: ReminderScheduling {
+    private enum NotificationStagger {
+        static let deadlineSecondRange = 20
+        static let reminderSecondRange = 50
+    }
+
     private let calendar: Calendar
     private let nowProvider: () -> Date
 
@@ -66,7 +71,8 @@ final class ReminderSchedulingService: ReminderScheduling {
             guard let reminderDate = calendar.date(byAdding: .minute, value: -offset, to: deadlineToday) else {
                 return nil
             }
-            let triggerDate = calendar.dateComponents([.hour, .minute], from: reminderDate)
+            var triggerDate = calendar.dateComponents([.hour, .minute], from: reminderDate)
+            triggerDate.second = staggerSecond(for: task.id, offsetMinutes: offset)
             return (offsetMinutes: offset, triggerDate: triggerDate)
         }
     }
@@ -84,7 +90,9 @@ final class ReminderSchedulingService: ReminderScheduling {
         }
 
         content.sound = .default
-        content.threadIdentifier = "task-reminder-\(task.id.uuidString)"
+        content.threadIdentifier = "task-reminders"
+        content.summaryArgument = task.name
+        content.summaryArgumentCount = 1
 
         if #available(iOS 15.0, *) {
             content.interruptionLevel = isDeadlineReminder ? .timeSensitive : .active
@@ -103,6 +111,17 @@ final class ReminderSchedulingService: ReminderScheduling {
         components.hour = deadline.hour
         components.minute = deadline.minute
         return calendar.date(from: components)
+    }
+
+    private func staggerSecond(for taskID: UUID, offsetMinutes: Int) -> Int {
+        let range = offsetMinutes == 0
+            ? NotificationStagger.deadlineSecondRange
+            : NotificationStagger.reminderSecondRange
+
+        let seed = taskID.uuidString.unicodeScalars.reduce(offsetMinutes * 37) { partialResult, scalar in
+            partialResult + Int(scalar.value)
+        }
+        return abs(seed) % max(range, 1)
     }
 
     private func pendingRequests(from center: UNUserNotificationCenter) async -> [UNNotificationRequest] {

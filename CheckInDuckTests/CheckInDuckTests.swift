@@ -239,6 +239,7 @@ struct CheckInDuckTests {
 
         #expect(content.interruptionLevel == UNNotificationInterruptionLevel.timeSensitive)
         #expect(content.relevanceScore == 1.0)
+        #expect(content.threadIdentifier == "task-reminders")
     }
 
     @Test
@@ -257,6 +258,86 @@ struct CheckInDuckTests {
 
         #expect(content.interruptionLevel == UNNotificationInterruptionLevel.active)
         #expect(content.relevanceScore == 0.5)
+    }
+
+    @Test
+    func reminderScheduleUsesSecondLevelStaggering() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let referenceDate = Date(timeIntervalSince1970: 1_710_000_000)
+
+        let service = ReminderSchedulingService(
+            calendar: calendar,
+            nowProvider: { referenceDate }
+        )
+        let task = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 22, minute: 30),
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [30])
+        )
+
+        let components = service.reminderScheduleComponents(
+            for: task,
+            referenceDate: referenceDate
+        )
+
+        let preDeadlineSecond = components.first(where: { $0.offsetMinutes == 30 })?.triggerDate.second
+        let deadlineSecond = components.first(where: { $0.offsetMinutes == 0 })?.triggerDate.second
+
+        #expect(preDeadlineSecond != nil)
+        #expect(deadlineSecond != nil)
+        #expect((preDeadlineSecond ?? -1) >= 0)
+        #expect((preDeadlineSecond ?? 100) < 50)
+        #expect((deadlineSecond ?? -1) >= 0)
+        #expect((deadlineSecond ?? 100) < 20)
+    }
+
+    @Test
+    func reminderScheduleSpreadsTasksWithSameMinute() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let referenceDate = Date(timeIntervalSince1970: 1_710_000_000)
+
+        let service = ReminderSchedulingService(
+            calendar: calendar,
+            nowProvider: { referenceDate }
+        )
+        let firstTask = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 22, minute: 30),
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [30])
+        )
+        let secondTask = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
+            name: "Safari",
+            appSelectionData: Data([0x02]),
+            deadline: DailyDeadline(hour: 22, minute: 30),
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [30])
+        )
+
+        let firstSecond = service.reminderScheduleComponents(
+            for: firstTask,
+            referenceDate: referenceDate
+        ).first(where: { $0.offsetMinutes == 30 })?.triggerDate.second
+
+        let secondSecond = service.reminderScheduleComponents(
+            for: secondTask,
+            referenceDate: referenceDate
+        ).first(where: { $0.offsetMinutes == 30 })?.triggerDate.second
+
+        #expect(firstSecond != nil)
+        #expect(secondSecond != nil)
+        #expect(firstSecond != secondSecond)
     }
 }
 

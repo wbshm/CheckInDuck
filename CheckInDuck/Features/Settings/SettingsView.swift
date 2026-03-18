@@ -1,7 +1,9 @@
 import SwiftUI
 import StoreKit
+import UIKit
 
 struct SettingsView: View {
+    @Environment(\.openURL) private var openURL
     @ObservedObject var subscriptionAccess: SubscriptionAccessService
     @StateObject private var storeKitSubscriptionService: StoreKitSubscriptionService
     @State private var authorizationState: AuthorizationState = .initial
@@ -267,6 +269,25 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Language") {
+                    Button {
+                        openAppLanguageSettings()
+                    } label: {
+                        HStack {
+                            Text("App Language")
+                            Spacer()
+                            Text(currentAppLanguageDisplayName)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Text("Opens CheckInDuck in the system Settings app. Change Preferred Language there.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("About") {
                     Text("CheckInDuck MVP")
                     Text("Privacy-first app usage habit tracker.")
@@ -340,6 +361,21 @@ struct SettingsView: View {
             await storeKitSubscriptionService.loadProducts()
         }
         await storeKitSubscriptionService.refreshSubscriptionStatus()
+    }
+
+    private var currentAppLanguageDisplayName: String {
+        let identifier =
+            Bundle.main.preferredLocalizations.first ??
+            Locale.preferredLanguages.first ??
+            Locale.current.identifier
+        return Locale.current.localizedString(forIdentifier: identifier) ?? identifier
+    }
+
+    private func openAppLanguageSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+        openURL(settingsURL)
     }
 }
 

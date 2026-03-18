@@ -43,6 +43,9 @@
 "Processing purchase..." = "Processing purchase...";
 "Restoring purchases..." = "Restoring purchases...";
 "Diagnostics" = "Diagnostics";
+"Language" = "Language";
+"App Language" = "App Language";
+"Opens CheckInDuck in the system Settings app. Change Preferred Language there." = "Opens CheckInDuck in the system Settings app. Change Preferred Language there.";
 "Refresh Diagnostics" = "Refresh Diagnostics";
 "App Group Container" = "App Group Container";
 "Monitored Activities" = "Monitored Activities";
