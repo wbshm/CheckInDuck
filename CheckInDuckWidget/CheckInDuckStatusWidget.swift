@@ -154,7 +154,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
                     SmallTaskBullet(status: task.status)
 
                     Text(task.title)
-                        .font(.system(size: 13, weight: .regular))
+                        .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(.black)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -202,21 +202,21 @@ private struct CheckInDuckStatusWidgetEntryView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: family == .systemSmall ? 14 : 10) {
-            HStack(spacing: 10) {
-                Image(systemName: "checklist")
-                    .font(.system(size: family == .systemSmall ? 20 : 16, weight: .semibold))
-                    .foregroundStyle(family == .systemSmall ? Color(red: 0.12, green: 0.60, blue: 0.93) : Color(red: 0.19, green: 0.53, blue: 0.38))
-                    .frame(width: 32, height: 32)
+            // HStack(spacing: 10) {
+            //     Image(systemName: "checklist")
+            //         .font(.system(size: family == .systemSmall ? 20 : 16, weight: .semibold))
+            //         .foregroundStyle(family == .systemSmall ? Color(red: 0.12, green: 0.60, blue: 0.93) : Color(red: 0.19, green: 0.53, blue: 0.38))
+            //         .frame(width: 32, height: 32)
 
-                Text("No active tasks")
-                    .font(.system(family == .systemSmall ? .subheadline : .headline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.19))
-            }
+            //     Text("No active tasks")
+            //         .font(.system(family == .systemSmall ? .subheadline : .headline, design: .rounded).weight(.semibold))
+            //         .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.19))
+            // }
 
-            Text(family == .systemSmall ? "Add or enable a task to show today's progress." : "Add or enable a task in CheckInDuck to see today's progress here.")
-                .font(.system(family == .systemSmall ? .caption2 : .caption, design: .rounded))
-                .foregroundStyle(Color(red: 0.39, green: 0.44, blue: 0.51))
-                .lineLimit(family == .systemSmall ? 2 : 3)
+            // Text(family == .systemSmall ? "Add or enable a task to show today's progress." : "Add or enable a task in CheckInDuck to see today's progress here.")
+            //     .font(.system(family == .systemSmall ? .caption2 : .caption, design: .rounded))
+            //     .foregroundStyle(Color(red: 0.39, green: 0.44, blue: 0.51))
+            //     .lineLimit(family == .systemSmall ? 2 : 3)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -289,7 +289,7 @@ private struct SmallTaskBullet: View {
 
             if status == .completed {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
             }
         }
@@ -313,7 +313,7 @@ private struct SmallTrailingStatus: View {
 
     var body: some View {
         Image(systemName: symbolName)
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: 14, weight: .medium))
             .foregroundStyle(symbolColor)
             .frame(width: 12, height: 12)
     }
