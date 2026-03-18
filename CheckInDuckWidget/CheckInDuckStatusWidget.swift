@@ -70,7 +70,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: family == .systemSmall ? 8 : 14) {
+        VStack(alignment: .leading, spacing: family == .systemSmall ? 12 : 14) {
             header
 
             if entry.snapshot.tasks.isEmpty {
@@ -134,23 +134,27 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     }
 
     private var smallHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
+        // 小尺寸小组件头部（应用名 + 任务总数）
+        HStack(alignment: .firstTextBaseline) { // 按文本首行基线对齐，保证文字排版整齐
+            // 应用名称文本
             Text("CheckInDuck")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color(red: 0.12, green: 0.60, blue: 0.93))
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-            Spacer(minLength: 4)
+                .font(.system(size: 15, weight: .semibold)) // 字体大小15，半粗体
+                .foregroundStyle(Color(red: 0.12, green: 0.60, blue: 0.93)) // 蓝色文字
+                .lineLimit(1) // 限制单行显示
+                .minimumScaleFactor(0.72) // 文字最小缩放比例（防止文字溢出）
+            Spacer(minLength: 4) // 最小间距4的空白分隔，推挤右侧数字到右边
+            // 今日任务总数文本
             Text("\(entry.snapshot.tasks.count)")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.black)
+                .font(.system(size: 22, weight: .bold)) // 字体大小22，粗体
+                .foregroundStyle(.black) // 黑色文字
         }
+        .padding(.top, 10)
     }
 
     private var smallLayout: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 18) {
             ForEach(Array(smallListTasks.enumerated()), id: \.element.id) { _, task in
-                HStack(spacing: 7) {
+                HStack(spacing: 12) {
                     SmallTaskBullet(status: task.status)
 
                     Text(task.title)
@@ -158,7 +162,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
                         .foregroundStyle(.black)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                        .minimumScaleFactor(0.74)
+                        .minimumScaleFactor(1)
 
                     Spacer(minLength: 3)
 
@@ -281,7 +285,7 @@ private struct SmallTaskBullet: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(bulletColor, lineWidth: 1.8)
+                .stroke(bulletColor, lineWidth: 1.6)
                 .background(
                     Circle()
                         .fill(status == .completed ? bulletColor : .clear)
@@ -293,13 +297,13 @@ private struct SmallTaskBullet: View {
                     .foregroundStyle(.white)
             }
         }
-        .frame(width: 14, height: 14)
+        .frame(width: 20, height: 20)
     }
 
     private var bulletColor: Color {
         switch status {
         case .pending:
-            return Color(.systemGray4)
+            return Color(.systemGray3)
         case .completed:
             return Color(red: 0.20, green: 0.69, blue: 0.45)
         case .missed:
