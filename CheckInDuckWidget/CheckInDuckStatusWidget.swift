@@ -70,7 +70,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: family == .systemSmall ? 6 : 14) {
+        VStack(alignment: .leading, spacing: family == .systemSmall ? 8 : 14) {
             header
 
             if entry.snapshot.tasks.isEmpty {
@@ -84,7 +84,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
                 }
             }
         }
-        .padding(family == .systemSmall ? 10 : 16)
+        .padding(family == .systemSmall ? 0 : 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
@@ -136,31 +136,31 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     private var smallHeader: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("CheckInDuck")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(red: 0.12, green: 0.60, blue: 0.93))
                 .lineLimit(1)
-                .minimumScaleFactor(0.78)
-            Spacer(minLength: 8)
+                .minimumScaleFactor(0.72)
+            Spacer(minLength: 4)
             Text("\(entry.snapshot.tasks.count)")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.black)
         }
     }
 
     private var smallLayout: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(smallListTasks.enumerated()), id: \.element.id) { _, task in
-                HStack(spacing: 8) {
+                HStack(spacing: 7) {
                     SmallTaskBullet(status: task.status)
 
                     Text(task.title)
-                        .font(.system(size: 11.5, weight: .regular, design: .rounded))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(.black)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                        .minimumScaleFactor(0.78)
+                        .minimumScaleFactor(0.74)
 
-                    Spacer(minLength: 4)
+                    Spacer(minLength: 3)
 
                     SmallTrailingStatus(status: task.status)
                 }
@@ -289,7 +289,7 @@ private struct SmallTaskBullet: View {
 
             if status == .completed {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white)
             }
         }
