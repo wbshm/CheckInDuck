@@ -4,6 +4,17 @@ enum DailyTaskStatus: String, Codable {
     case pending
     case completed
     case missed
+
+    var localizedTitle: String {
+        switch self {
+        case .pending:
+            return L10n.tr("status.pending")
+        case .completed:
+            return L10n.tr("status.completed")
+        case .missed:
+            return L10n.tr("status.missed")
+        }
+    }
 }
 
 enum CompletionSource: String, Codable {

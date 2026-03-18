@@ -46,7 +46,10 @@ struct TodayView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text(
-                    "Free tier supports up to \(SubscriptionAccessService.freeTaskLimit) task(s). Upgrade to Premium for unlimited tasks."
+                    L10n.format(
+                        "today.alert.task_limit.message",
+                        SubscriptionAccessService.freeTaskLimit
+                    )
                 )
             }
             .navigationDestination(isPresented: $isShowingUpgradeView) {
@@ -134,7 +137,7 @@ private struct TodayTaskRow: View {
             }
 
             HStack {
-                Text("Deadline: \(task.deadline.displayText)")
+                Text(L10n.format("today.deadline", task.deadline.displayText))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -142,7 +145,7 @@ private struct TodayTaskRow: View {
                     .buttonStyle(.borderless)
             }
 
-            Text("Auto check-in threshold: \(max(task.usageThresholdSeconds, 1) / 60) min")
+            Text(L10n.format("today.auto_check_in_threshold", max(task.usageThresholdSeconds, 1) / 60))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -155,7 +158,7 @@ private struct TodayTaskRow: View {
     }
 
     private var statusTag: some View {
-        Text(status.rawValue.capitalized)
+        Text(status.localizedTitle)
             .font(.caption)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

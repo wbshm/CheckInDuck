@@ -29,11 +29,11 @@ struct SettingsView: View {
                 Section("Permissions") {
                     permissionRow(
                         title: "Notifications",
-                        status: authorizationState.notificationPermission.rawValue
+                        status: authorizationState.notificationPermission.localizedTitle
                     )
                     permissionRow(
                         title: "Family Controls",
-                        status: authorizationState.familyControlsAuthorization.rawValue
+                        status: authorizationState.familyControlsAuthorization.localizedTitle
                     )
 
                     Button("Request Notification Permission") {
@@ -62,7 +62,7 @@ struct SettingsView: View {
                     Toggle("Enable Reminders", isOn: $remindersEnabled)
 
                     Stepper(
-                        "Default Reminder Lead Time: \(reminderOffsetMinutes) min",
+                        L10n.format("settings.reminders.default_lead_time", reminderOffsetMinutes),
                         value: $reminderOffsetMinutes,
                         in: 5...120,
                         step: 5
@@ -109,7 +109,7 @@ struct SettingsView: View {
                     HStack {
                         Text("Current Tier")
                         Spacer()
-                        Text(subscriptionAccess.currentTier.rawValue.capitalized)
+                        Text(subscriptionAccess.currentTier.localizedTitle)
                             .foregroundStyle(.secondary)
                     }
 
@@ -123,7 +123,7 @@ struct SettingsView: View {
                     HStack {
                         Text("Free History Window")
                         Spacer()
-                        Text("\(SubscriptionAccessService.freeHistoryLookbackDays) days")
+                        Text(L10n.format("settings.plan.free_history_window_value", SubscriptionAccessService.freeHistoryLookbackDays))
                             .foregroundStyle(.secondary)
                     }
 
@@ -183,12 +183,12 @@ struct SettingsView: View {
                     }
 
                     if let lastSyncAt = storeKitSubscriptionService.lastSyncAt {
-                        Text("Last synced: \(lastSyncAt.formatted(date: .abbreviated, time: .shortened))")
+                        Text(L10n.format("settings.plan.last_synced", lastSyncAt.formatted(date: .abbreviated, time: .shortened)))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
-                    Text("StoreKit product IDs: \(SubscriptionProductCatalog.all.joined(separator: " / "))")
+                    Text(L10n.format("settings.plan.storekit_product_ids", SubscriptionProductCatalog.all.joined(separator: " / ")))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -202,7 +202,7 @@ struct SettingsView: View {
                         HStack {
                             Text("App Group Container")
                             Spacer()
-                            Text(monitoringDiagnostics.appGroupContainerAvailable ? "Available" : "Unavailable")
+                            Text(monitoringDiagnostics.appGroupContainerAvailable ? L10n.tr("settings.diagnostics.available") : L10n.tr("settings.diagnostics.unavailable"))
                                 .foregroundStyle(monitoringDiagnostics.appGroupContainerAvailable ? .green : .red)
                         }
 
@@ -222,7 +222,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Using App Group Defaults")
                             Spacer()
-                            Text(monitoringDiagnostics.completionSnapshot.usesAppGroupDefaults ? "Yes" : "No")
+                            Text(monitoringDiagnostics.completionSnapshot.usesAppGroupDefaults ? L10n.tr("common.yes") : L10n.tr("common.no"))
                                 .foregroundStyle(monitoringDiagnostics.completionSnapshot.usesAppGroupDefaults ? .green : .red)
                         }
 
@@ -234,33 +234,33 @@ struct SettingsView: View {
                         }
 
                         if let lastIntervalStartAt = monitoringDiagnostics.completionSnapshot.lastIntervalStartAt {
-                            Text("Last interval start: \(lastIntervalStartAt.formatted(date: .abbreviated, time: .standard))")
+                            Text(L10n.format("settings.diagnostics.last_interval_start", lastIntervalStartAt.formatted(date: .abbreviated, time: .standard)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text("Last interval start: none")
+                            Text(L10n.tr("settings.diagnostics.last_interval_start_none"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
                         if let lastIntervalStartTaskID = monitoringDiagnostics.completionSnapshot.lastIntervalStartTaskID {
-                            Text("Last interval task: \(lastIntervalStartTaskID)")
+                            Text(L10n.format("settings.diagnostics.last_interval_task", lastIntervalStartTaskID))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
 
                         if let lastThresholdAt = monitoringDiagnostics.completionSnapshot.lastThresholdAt {
-                            Text("Last threshold callback: \(lastThresholdAt.formatted(date: .abbreviated, time: .standard))")
+                            Text(L10n.format("settings.diagnostics.last_threshold_callback", lastThresholdAt.formatted(date: .abbreviated, time: .standard)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text("Last threshold callback: none")
+                            Text(L10n.tr("settings.diagnostics.last_threshold_callback_none"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
                         if let lastThresholdTaskID = monitoringDiagnostics.completionSnapshot.lastThresholdTaskID {
-                            Text("Last threshold task: \(lastThresholdTaskID)")
+                            Text(L10n.format("settings.diagnostics.last_threshold_task", lastThresholdTaskID))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -303,7 +303,7 @@ struct SettingsView: View {
         HStack {
             Text(title)
             Spacer()
-            Text(status.capitalized)
+            Text(status)
                 .foregroundStyle(.secondary)
         }
     }

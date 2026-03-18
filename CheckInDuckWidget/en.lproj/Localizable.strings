@@ -1,0 +1,8 @@
+"widget.configuration.display_name" = "Today's Tasks";
+"widget.configuration.description" = "Review your current CheckInDuck task status at a glance.";
+"widget.overview.missed" = "%d missed";
+"widget.overview.pending" = "%d pending";
+"widget.overview.done" = "%d done";
+"widget.detail.complete" = "Everything for today is complete.";
+"widget.detail.pending" = "%d task(s) still need attention.";
+"widget.detail.missed" = "Review missed tasks and get back on track.";

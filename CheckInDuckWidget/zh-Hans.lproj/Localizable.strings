@@ -1,0 +1,8 @@
+"widget.configuration.display_name" = "今日任务";
+"widget.configuration.description" = "一眼查看 CheckInDuck 当前任务状态。";
+"widget.overview.missed" = "已错过 %d 项";
+"widget.overview.pending" = "待完成 %d 项";
+"widget.overview.done" = "已完成 %d 项";
+"widget.detail.complete" = "今天的任务已全部完成。";
+"widget.detail.pending" = "还有 %d 项任务需要处理。";
+"widget.detail.missed" = "查看错过的任务并重新开始。";

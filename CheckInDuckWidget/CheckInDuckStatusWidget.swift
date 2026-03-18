@@ -8,8 +8,8 @@ struct CheckInDuckStatusWidget: Widget {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             CheckInDuckStatusWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Today's Tasks")
-        .description("Review your current CheckInDuck task status at a glance.")
+        .configurationDisplayName(WidgetL10n.tr("widget.configuration.display_name"))
+        .description(WidgetL10n.tr("widget.configuration.description"))
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -321,26 +321,26 @@ private struct CheckInDuckStatusWidgetEntryView: View {
 
     private var mediumOverviewDetailText: String {
         if entry.snapshot.missedCount > 0 {
-            return "\(entry.snapshot.missedCount) missed"
+            return WidgetL10n.format("widget.overview.missed", entry.snapshot.missedCount)
         }
 
         if entry.snapshot.pendingCount > 0 {
-            return "\(entry.snapshot.pendingCount) pending"
+            return WidgetL10n.format("widget.overview.pending", entry.snapshot.pendingCount)
         }
 
-        return "\(entry.snapshot.completedCount) done"
+        return WidgetL10n.format("widget.overview.done", entry.snapshot.completedCount)
     }
 
     private var detailText: String {
         if entry.snapshot.completedCount == entry.snapshot.tasks.count {
-            return "Everything for today is complete."
+            return WidgetL10n.tr("widget.detail.complete")
         }
 
         if entry.snapshot.pendingCount > 0 {
-            return "\(entry.snapshot.pendingCount) task\(entry.snapshot.pendingCount == 1 ? "" : "s") still need attention."
+            return WidgetL10n.format("widget.detail.pending", entry.snapshot.pendingCount)
         }
 
-        return "Review missed tasks and get back on track."
+        return WidgetL10n.tr("widget.detail.missed")
     }
 
     private func taskSubtitle(for task: WidgetTaskStatusSnapshot) -> String {
@@ -352,6 +352,20 @@ private struct CheckInDuckStatusWidgetEntryView: View {
         case .missed:
             return "Missed at \(task.deadlineText)"
         }
+    }
+}
+
+private enum WidgetL10n {
+    static func tr(_ key: String) -> String {
+        NSLocalizedString(key, comment: "")
+    }
+
+    static func format(_ key: String, _ arguments: CVarArg...) -> String {
+        String(
+            format: NSLocalizedString(key, comment: ""),
+            locale: Locale.current,
+            arguments: arguments
+        )
     }
 }
 

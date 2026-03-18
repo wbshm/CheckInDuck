@@ -15,23 +15,29 @@ enum UpgradeEntryPoint {
         switch self {
         case .settings:
             return UpgradeEntryCopy(
-                title: "Upgrade to Premium",
-                message: "Unlock all premium features for daily habit tracking."
+                title: L10n.tr("upgrade.entry.settings.title"),
+                message: L10n.tr("upgrade.entry.settings.message")
             )
         case .taskLimit:
             return UpgradeEntryCopy(
-                title: "Task Limit Reached",
-                message: "Free tier supports up to \(SubscriptionAccessService.freeTaskLimit) task(s). Upgrade for unlimited tasks."
+                title: L10n.tr("upgrade.entry.task_limit.title"),
+                message: L10n.format(
+                    "upgrade.entry.task_limit.message",
+                    SubscriptionAccessService.freeTaskLimit
+                )
             )
         case .historyLimit:
             return UpgradeEntryCopy(
-                title: "History Is Limited",
-                message: "Free tier shows only the latest \(SubscriptionAccessService.freeHistoryLookbackDays) days. Upgrade to view full history."
+                title: L10n.tr("upgrade.entry.history_limit.title"),
+                message: L10n.format(
+                    "upgrade.entry.history_limit.message",
+                    SubscriptionAccessService.freeHistoryLookbackDays
+                )
             )
         case .reminderCustomization:
             return UpgradeEntryCopy(
-                title: "Custom Reminders Need Premium",
-                message: "Upgrade to choose your own reminder lead time."
+                title: L10n.tr("upgrade.entry.reminder_customization.title"),
+                message: L10n.tr("upgrade.entry.reminder_customization.message")
             )
         }
     }

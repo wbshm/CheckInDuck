@@ -10,9 +10,9 @@ enum HistoryDisplayMode: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .byDay:
-            return "By Day"
+            return L10n.tr("history.display.by_day")
         case .byTask:
-            return "By Task"
+            return L10n.tr("history.display.by_task")
         }
     }
 }
@@ -145,17 +145,17 @@ final class HistoryViewModel: ObservableObject {
     }
 
     func taskName(for taskID: UUID) -> String {
-        tasks.first(where: { $0.id == taskID })?.name ?? "Unknown Task"
+        tasks.first(where: { $0.id == taskID })?.name ?? L10n.tr("history.unknown_task")
     }
 
     func completionSourceText(for record: DailyRecord) -> String {
         switch record.completionSource {
         case .manual:
-            return "Manual"
+            return L10n.tr("history.source.manual")
         case .appUsageThreshold:
-            return "App Usage"
+            return L10n.tr("history.source.app_usage")
         case nil:
-            return "Not Completed"
+            return L10n.tr("history.source.not_completed")
         }
     }
 

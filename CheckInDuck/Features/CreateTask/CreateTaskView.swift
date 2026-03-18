@@ -41,7 +41,13 @@ struct CreateTaskView: View {
                     }
 
                     if !selectedApps.categoryTokens.isEmpty || !selectedApps.webDomainTokens.isEmpty {
-                        Text("Categories: \(selectedApps.categoryTokens.count), Websites: \(selectedApps.webDomainTokens.count)")
+                        Text(
+                            L10n.format(
+                                "create_task.selection.categories_websites",
+                                selectedApps.categoryTokens.count,
+                                selectedApps.webDomainTokens.count
+                            )
+                        )
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -60,7 +66,7 @@ struct CreateTaskView: View {
                         HStack {
                             Text("Mark completed after app usage")
                             Spacer()
-                            Text("\(viewModel.usageThresholdMinutes) min")
+                            Text(L10n.format("common.minutes.short", viewModel.usageThresholdMinutes))
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
@@ -111,7 +117,7 @@ struct CreateTaskView: View {
             selectedApps.applicationTokens.count +
             selectedApps.categoryTokens.count +
             selectedApps.webDomainTokens.count
-        return count == 0 ? "None" : "\(count)"
+        return count == 0 ? L10n.tr("common.none") : "\(count)"
     }
 
     private var deadlineDateBinding: Binding<Date> {

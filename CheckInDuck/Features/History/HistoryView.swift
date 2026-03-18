@@ -75,7 +75,7 @@ struct HistoryView: View {
             .disabled(!viewModel.isTaskFilterEnabled)
 
             if !subscriptionAccess.canViewFullHistory() {
-                Text("Free tier shows the latest \(SubscriptionAccessService.freeHistoryLookbackDays) days.")
+                Text(L10n.format("history.free_tier_window", SubscriptionAccessService.freeHistoryLookbackDays))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -121,7 +121,7 @@ struct HistoryView: View {
 
     private var selectedTaskFilterText: String {
         guard let selectedTaskID = viewModel.selectedTaskID else {
-            return "All Tasks"
+            return L10n.tr("history.all_tasks")
         }
         return viewModel.taskName(for: selectedTaskID)
     }
@@ -135,7 +135,7 @@ struct HistoryView: View {
 
     private func rowSubtitle(for record: DailyRecord) -> String {
         let sourceText = viewModel.completionSourceText(for: record)
-        return "\(record.status.rawValue.capitalized) • \(sourceText)"
+        return L10n.format("history.row_subtitle", record.status.localizedTitle, sourceText)
     }
 
     private func historyRow(title: String, subtitle: String, status: DailyTaskStatus) -> some View {
