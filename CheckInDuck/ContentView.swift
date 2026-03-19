@@ -8,8 +8,27 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var isShowingLaunchScreen = true
+
     var body: some View {
-        RootTabView()
+        ZStack {
+            RootTabView()
+                .allowsHitTesting(!isShowingLaunchScreen)
+
+            if isShowingLaunchScreen {
+                LaunchScreenView()
+                    .transition(.opacity)
+            }
+        }
+        .task {
+            guard isShowingLaunchScreen else { return }
+
+            try? await Task.sleep(for: .milliseconds(900))
+
+            withAnimation(.easeOut(duration: 0.22)) {
+                isShowingLaunchScreen = false
+            }
+        }
     }
 }
 

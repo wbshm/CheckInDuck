@@ -15,6 +15,7 @@
 "Tasks" = "任务";
 "No tasks yet. Tap New Task to add one." = "还没有任务，点击“新建任务”添加。";
 "Delete" = "删除";
+"Edit" = "编辑";
 "Disable" = "停用";
 "Enable" = "启用";
 "Mark Completed" = "标记完成";
@@ -67,6 +68,8 @@
 "1 min" = "1 分钟";
 "60 min" = "60 分钟";
 "Create Task" = "创建任务";
+"Edit Task" = "编辑任务";
+"Save" = "保存";
 "Choose App" = "选择应用";
 "Premium Benefits" = "Premium 权益";
 "Unlimited tasks" = "无限任务";
@@ -123,4 +126,6 @@
 "common.no" = "否";
 "common.none" = "无";
 "common.minutes.short" = "%d 分钟";
+"today.filter.all" = "全部";
+"No tasks match the selected filter." = "当前筛选条件下没有任务。";
 "create_task.selection.categories_websites" = "分类：%d，网站：%d";

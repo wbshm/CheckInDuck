@@ -1,10 +1,46 @@
 import Foundation
 import Combine
 
+enum TodayTaskFilter: String, CaseIterable, Identifiable {
+    case all
+    case pending
+    case completed
+    case missed
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:
+            return L10n.tr("today.filter.all")
+        case .pending:
+            return L10n.tr("status.pending")
+        case .completed:
+            return L10n.tr("status.completed")
+        case .missed:
+            return L10n.tr("status.missed")
+        }
+    }
+
+    var status: DailyTaskStatus? {
+        switch self {
+        case .all:
+            return nil
+        case .pending:
+            return .pending
+        case .completed:
+            return .completed
+        case .missed:
+            return .missed
+        }
+    }
+}
+
 @MainActor
 final class TodayViewModel: ObservableObject {
     @Published private(set) var tasks: [HabitTask] = []
     @Published private(set) var records: [DailyRecord] = []
+    @Published var selectedFilter: TodayTaskFilter = .all
 
     private let taskStore: TaskStore
     private let dailyRecordStore: DailyRecordStore
@@ -58,6 +94,19 @@ final class TodayViewModel: ObservableObject {
         startMonitoringIfNeeded(for: task)
     }
 
+    func updateTask(_ task: HabitTask) {
+        taskStore.update(task)
+        reload()
+        cancelReminders(for: task.id)
+        stopMonitoring(taskID: task.id)
+        monitoringFingerprintByTaskID.removeValue(forKey: task.id)
+
+        if task.isEnabled {
+            scheduleRemindersIfNeeded(for: task)
+            startMonitoringIfNeeded(for: task)
+        }
+    }
+
     func deleteTask(id: UUID) {
         taskStore.delete(id: id)
         dailyRecordStore.deleteAll(taskId: id)
@@ -68,8 +117,14 @@ final class TodayViewModel: ObservableObject {
     }
 
     func toggleEnabled(task: HabitTask) {
+        setEnabled(task: task, isEnabled: !task.isEnabled)
+    }
+
+    func setEnabled(task: HabitTask, isEnabled: Bool) {
+        guard task.isEnabled != isEnabled else { return }
+
         var updated = task
-        updated.isEnabled.toggle()
+        updated.isEnabled = isEnabled
         updated.updatedAt = Date()
         taskStore.update(updated)
         reload()
@@ -145,8 +200,49 @@ final class TodayViewModel: ObservableObject {
         tasks.filter { status(for: $0) == .pending }.count
     }
 
+    var displayedTasks: [HabitTask] {
+        orderedTasks(tasks).filter { task in
+            guard let selectedStatus = selectedFilter.status else { return true }
+            return status(for: task) == selectedStatus
+        }
+    }
+
     private func todayRecord(for taskID: UUID, on date: Date = Date()) -> DailyRecord? {
         records.first(where: { $0.taskId == taskID && calendar.isDate($0.date, inSameDayAs: date) })
+    }
+
+    private func orderedTasks(_ tasks: [HabitTask]) -> [HabitTask] {
+        tasks.sorted { lhs, rhs in
+            let lhsStatus = status(for: lhs)
+            let rhsStatus = status(for: rhs)
+
+            let lhsPriority = sortPriority(for: lhsStatus)
+            let rhsPriority = sortPriority(for: rhsStatus)
+            if lhsPriority != rhsPriority {
+                return lhsPriority < rhsPriority
+            }
+
+            if lhs.deadline.hour != rhs.deadline.hour {
+                return lhs.deadline.hour < rhs.deadline.hour
+            }
+
+            if lhs.deadline.minute != rhs.deadline.minute {
+                return lhs.deadline.minute < rhs.deadline.minute
+            }
+
+            return lhs.createdAt < rhs.createdAt
+        }
+    }
+
+    private func sortPriority(for status: DailyTaskStatus) -> Int {
+        switch status {
+        case .missed:
+            return 0
+        case .pending:
+            return 1
+        case .completed:
+            return 2
+        }
     }
 
     private func scheduleRemindersIfNeeded(for task: HabitTask) {

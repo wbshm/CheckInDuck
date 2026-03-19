@@ -15,6 +15,7 @@
 "Tasks" = "Tasks";
 "No tasks yet. Tap New Task to add one." = "No tasks yet. Tap New Task to add one.";
 "Delete" = "Delete";
+"Edit" = "Edit";
 "Disable" = "Disable";
 "Enable" = "Enable";
 "Mark Completed" = "Mark Completed";
@@ -67,6 +68,8 @@
 "1 min" = "1 min";
 "60 min" = "60 min";
 "Create Task" = "Create Task";
+"Edit Task" = "Edit Task";
+"Save" = "Save";
 "Choose App" = "Choose App";
 "Premium Benefits" = "Premium Benefits";
 "Unlimited tasks" = "Unlimited tasks";
@@ -123,4 +126,6 @@
 "common.no" = "No";
 "common.none" = "None";
 "common.minutes.short" = "%d min";
+"today.filter.all" = "All";
+"No tasks match the selected filter." = "No tasks match the selected filter.";
 "create_task.selection.categories_websites" = "Categories: %d, Websites: %d";

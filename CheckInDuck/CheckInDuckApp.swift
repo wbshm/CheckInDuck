@@ -11,7 +11,7 @@ import SwiftUI
 struct CheckInDuckApp: App {
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            ContentView()
         }
     }
 }

@@ -9,6 +9,22 @@ struct CreateTaskView: View {
     @State private var selectedApps = FamilyActivitySelection()
     @State private var isPresentingAppPicker = false
 
+    init(viewModel: CreateTaskViewModel, onSave: @escaping (HabitTask) -> Void) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+        self.onSave = onSave
+
+        let initialSelection: FamilyActivitySelection
+        if
+            let data = viewModel.selectedAppSelectionData,
+            let decodedSelection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
+        {
+            initialSelection = decodedSelection
+        } else {
+            initialSelection = FamilyActivitySelection()
+        }
+        self._selectedApps = State(initialValue: initialSelection)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -85,7 +101,7 @@ struct CreateTaskView: View {
                     }
                 }
             }
-            .navigationTitle("Create Task")
+            .navigationTitle(viewModel.isEditing ? "Edit Task" : "Create Task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -108,6 +124,9 @@ struct CreateTaskView: View {
             }
             .onChange(of: selectedApps) { _ in
                 syncSelectionData()
+            }
+            .onChange(of: viewModel.usageThresholdMinutes) { _ in
+                HapticFeedback.selectionChanged()
             }
         }
     }
