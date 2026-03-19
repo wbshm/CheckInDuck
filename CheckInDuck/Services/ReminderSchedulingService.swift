@@ -8,7 +8,6 @@ protocol ReminderScheduling {
 
 final class ReminderSchedulingService: ReminderScheduling {
     private enum NotificationStagger {
-        static let deadlineSecondRange = 20
         static let reminderSecondRange = 50
     }
 
@@ -114,9 +113,9 @@ final class ReminderSchedulingService: ReminderScheduling {
     }
 
     private func staggerSecond(for taskID: UUID, offsetMinutes: Int) -> Int {
-        let range = offsetMinutes == 0
-            ? NotificationStagger.deadlineSecondRange
-            : NotificationStagger.reminderSecondRange
+        guard offsetMinutes > 0 else { return 0 }
+
+        let range = NotificationStagger.reminderSecondRange
 
         let seed = taskID.uuidString.unicodeScalars.reduce(offsetMinutes * 37) { partialResult, scalar in
             partialResult + Int(scalar.value)

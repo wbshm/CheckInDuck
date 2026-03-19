@@ -11,6 +11,8 @@ struct SettingsView: View {
     @State private var remindersEnabled = AppPreferences.remindersEnabled()
     @State private var reminderOffsetMinutes = AppPreferences.defaultReminderOffsetMinutes()
     @State private var isApplyingReminderSettings = false
+    @State private var hasLoadedReminderSettings = false
+    @State private var pendingReminderApplyTask: Task<Void, Never>?
     @State private var monitoringDiagnostics: MonitoringDiagnostics?
 
     private let authorizationService: AuthorizationServicing = AuthorizationService()
@@ -297,15 +299,18 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .onChange(of: remindersEnabled) { newValue in
                 AppPreferences.setRemindersEnabled(newValue)
+                scheduleReminderSettingsSyncIfReady()
             }
             .onChange(of: reminderOffsetMinutes) { newValue in
                 AppPreferences.setDefaultReminderOffsetMinutes(newValue)
+                scheduleReminderSettingsSyncIfReady()
             }
             .onChange(of: subscriptionAccess.currentTier) { newValue in
                 if newValue == .free {
                     let fallbackOffset = 30
                     reminderOffsetMinutes = fallbackOffset
                     AppPreferences.setDefaultReminderOffsetMinutes(fallbackOffset)
+                    scheduleReminderSettingsSyncIfReady()
                 }
             }
             .task {
@@ -315,6 +320,7 @@ struct SettingsView: View {
                 reminderOffsetMinutes = AppPreferences.defaultReminderOffsetMinutes()
                 await refreshSubscriptionSection()
                 monitoringDiagnostics = monitoringDiagnosticsService.snapshot()
+                hasLoadedReminderSettings = true
             }
         }
     }
@@ -352,6 +358,17 @@ struct SettingsView: View {
             } else {
                 await reminderScheduling.cancelReminders(for: task.id)
             }
+        }
+    }
+
+    private func scheduleReminderSettingsSyncIfReady() {
+        guard hasLoadedReminderSettings else { return }
+
+        pendingReminderApplyTask?.cancel()
+        pendingReminderApplyTask = Task {
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            await applyReminderSettingsToExistingTasks()
         }
     }
 

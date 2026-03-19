@@ -14,15 +14,12 @@ struct LaunchScreenView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(.white.opacity(0.18))
-                        .frame(width: 112, height: 112)
-
-                    Image(systemName: "checklist.checked")
-                        .font(.system(size: 46, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
+                Image("LaunchAppIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 112, height: 112)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
 
                 VStack(spacing: 8) {
                     Text("CheckInDuck")

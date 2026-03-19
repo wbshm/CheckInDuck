@@ -78,6 +78,7 @@ final class TodayViewModel: ObservableObject {
         self.appUsageMonitoring = appUsageMonitoring
         self.appUsageCompletionEvents = appUsageCompletionEvents
         reload()
+        scheduleRemindersForEnabledTasks()
         startMonitoringForEnabledTasks()
     }
 
@@ -177,6 +178,7 @@ final class TodayViewModel: ObservableObject {
 
     func refreshForForeground() {
         reload()
+        scheduleRemindersForEnabledTasks()
         evaluateDailyStatuses()
     }
 
@@ -249,6 +251,12 @@ final class TodayViewModel: ObservableObject {
         guard task.isEnabled else { return }
         Task {
             await reminderScheduling.scheduleReminders(for: task)
+        }
+    }
+
+    private func scheduleRemindersForEnabledTasks() {
+        for task in tasks where task.isEnabled {
+            scheduleRemindersIfNeeded(for: task)
         }
     }
 

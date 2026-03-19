@@ -59,6 +59,50 @@ struct CheckInDuckTests {
 
     @MainActor
     @Test
+    func initSchedulesRemindersForExistingEnabledTasks() async throws {
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let monitoring = MockAppUsageMonitoring()
+        let reminder = TrackingReminderScheduling()
+        let completionEvents = StubAppUsageCompletionEvents()
+
+        let enabledTask = HabitTask(
+            name: "WeChat",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 23, minute: 0),
+            usageThresholdSeconds: 60,
+            isEnabled: true
+        )
+        let disabledTask = HabitTask(
+            name: "Safari",
+            appSelectionData: Data([0x02]),
+            deadline: DailyDeadline(hour: 21, minute: 0),
+            usageThresholdSeconds: 60,
+            isEnabled: false
+        )
+        taskStore.add(enabledTask)
+        taskStore.add(disabledTask)
+
+        _ = TodayViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: .current,
+            reminderScheduling: reminder,
+            appUsageMonitoring: monitoring,
+            appUsageCompletionEvents: completionEvents
+        )
+
+        let scheduledEnabled = await waitUntil {
+            await reminder.scheduleCount(for: enabledTask.id) == 1
+        }
+
+        #expect(scheduledEnabled)
+        #expect(await reminder.scheduleCount(for: disabledTask.id) == 0)
+    }
+
+    @MainActor
+    @Test
     func thresholdEventIncludesPastActivityOnSupportedIOS() async throws {
         let event = AppUsageMonitoringService.makeThresholdEvent(
             selection: FamilyActivitySelection(),
@@ -292,8 +336,7 @@ struct CheckInDuckTests {
         #expect(deadlineSecond != nil)
         #expect((preDeadlineSecond ?? -1) >= 0)
         #expect((preDeadlineSecond ?? 100) < 50)
-        #expect((deadlineSecond ?? -1) >= 0)
-        #expect((deadlineSecond ?? 100) < 20)
+        #expect(deadlineSecond == 0)
     }
 
     @Test
@@ -382,6 +425,32 @@ private final class MockAppUsageMonitoring: AppUsageMonitoring {
 private struct NoopReminderScheduling: ReminderScheduling {
     func scheduleReminders(for task: HabitTask) async {}
     func cancelReminders(for taskID: UUID) async {}
+}
+
+private final class TrackingReminderScheduling: ReminderScheduling {
+    private actor State {
+        var scheduledTaskIDs: [UUID] = []
+
+        func recordSchedule(_ taskID: UUID) {
+            scheduledTaskIDs.append(taskID)
+        }
+
+        func scheduleCount(for taskID: UUID) -> Int {
+            scheduledTaskIDs.filter { $0 == taskID }.count
+        }
+    }
+
+    private let state = State()
+
+    func scheduleReminders(for task: HabitTask) async {
+        await state.recordSchedule(task.id)
+    }
+
+    func cancelReminders(for taskID: UUID) async {}
+
+    func scheduleCount(for taskID: UUID) async -> Int {
+        await state.scheduleCount(for: taskID)
+    }
 }
 
 private struct StubAppUsageCompletionEvents: AppUsageCompletionEventReading {
