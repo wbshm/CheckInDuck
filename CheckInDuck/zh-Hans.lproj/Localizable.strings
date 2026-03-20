@@ -78,6 +78,21 @@
 "Premium is active" = "Premium 已激活";
 "Upgrade Now" = "立即升级";
 "Reload Plans" = "重新加载方案";
+"onboarding.intro.title" = "养成更稳定的每日计划";
+"onboarding.intro.message" = "CheckInDuck 帮你规划任务、在截止前发送提醒，并在达到应用使用目标后自动完成打卡。";
+"onboarding.notifications.title" = "开启提醒通知";
+"onboarding.notifications.message" = "允许通知后，CheckInDuck 才能在任务即将截止和截止到达时及时提醒你。";
+"onboarding.notifications.enable" = "开启通知";
+"onboarding.notifications.open_settings" = "前往设置";
+"onboarding.notifications.skip" = "稍后设置";
+"onboarding.family.title" = "连接家庭控制";
+"onboarding.family.message" = "授权家庭控制后，CheckInDuck 才能监控你选中的 App，并在达到使用目标时自动完成任务。";
+"onboarding.family.enable" = "开启家庭控制";
+"onboarding.family.finish" = "开始使用 CheckInDuck";
+"onboarding.family.finish_later" = "稍后完成";
+"onboarding.common.continue" = "继续";
+"launch.title" = "打卡鸭";
+"launch.subtitle" = "记录今天真正重要的打卡计划";
 
 "status.pending" = "待完成";
 "status.completed" = "已完成";

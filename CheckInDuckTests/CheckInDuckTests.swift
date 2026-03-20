@@ -145,6 +145,21 @@ struct CheckInDuckTests {
         #expect(viewModel.selectedAppSelectionData == nil)
     }
 
+    @Test
+    func onboardingPreferencePersistsCompletion() async throws {
+        let defaults = UserDefaults(suiteName: "CheckInDuckTests.onboardingPreferencePersistsCompletion")!
+        defaults.removePersistentDomain(forName: "CheckInDuckTests.onboardingPreferencePersistsCompletion")
+        defer {
+            defaults.removePersistentDomain(forName: "CheckInDuckTests.onboardingPreferencePersistsCompletion")
+        }
+
+        #expect(AppPreferences.hasCompletedOnboarding(defaults: defaults) == false)
+
+        AppPreferences.setHasCompletedOnboarding(true, defaults: defaults)
+
+        #expect(AppPreferences.hasCompletedOnboarding(defaults: defaults) == true)
+    }
+
     @MainActor
     @Test
     func parseTaskIDSupportsBootstrapActivityName() async throws {

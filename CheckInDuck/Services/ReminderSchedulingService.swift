@@ -90,8 +90,6 @@ final class ReminderSchedulingService: ReminderScheduling {
 
         content.sound = .default
         content.threadIdentifier = "task-reminders"
-        content.summaryArgument = task.name
-        content.summaryArgumentCount = 1
 
         if #available(iOS 15.0, *) {
             content.interruptionLevel = isDeadlineReminder ? .timeSensitive : .active

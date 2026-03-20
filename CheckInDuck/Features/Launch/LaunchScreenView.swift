@@ -3,15 +3,8 @@ import SwiftUI
 struct LaunchScreenView: View {
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.09, green: 0.55, blue: 0.99),
-                    Color(red: 0.40, green: 0.73, blue: 1.0)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            Color.white
+                .ignoresSafeArea()
 
             VStack(spacing: 20) {
                 Image("LaunchAppIcon")
@@ -22,13 +15,13 @@ struct LaunchScreenView: View {
                     .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
 
                 VStack(spacing: 8) {
-                    Text("CheckInDuck")
+                    Text(L10n.tr("launch.title"))
                         .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
-                    Text("Daily check-ins for what matters today")
+                    Text(L10n.tr("launch.subtitle"))
                         .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.88))
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(.horizontal, 32)

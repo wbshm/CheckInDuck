@@ -3,6 +3,7 @@ import Foundation
 enum AppPreferences {
     private static let remindersEnabledKey = "app_preferences_reminders_enabled_v1"
     private static let defaultReminderOffsetMinutesKey = "app_preferences_default_reminder_offset_minutes_v1"
+    private static let completedOnboardingKey = "app_preferences_completed_onboarding_v1"
 
     private static let fallbackRemindersEnabled = true
     private static let fallbackReminderOffsetMinutes = 30
@@ -30,5 +31,13 @@ enum AppPreferences {
 
     static func setDefaultReminderOffsetMinutes(_ minutes: Int, defaults: UserDefaults = .standard) {
         defaults.set(max(minutes, minimumReminderOffsetMinutes), forKey: defaultReminderOffsetMinutesKey)
+    }
+
+    static func hasCompletedOnboarding(defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: completedOnboardingKey)
+    }
+
+    static func setHasCompletedOnboarding(_ completed: Bool, defaults: UserDefaults = .standard) {
+        defaults.set(completed, forKey: completedOnboardingKey)
     }
 }

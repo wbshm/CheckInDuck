@@ -78,6 +78,21 @@
 "Premium is active" = "Premium is active";
 "Upgrade Now" = "Upgrade Now";
 "Reload Plans" = "Reload Plans";
+"onboarding.intro.title" = "Build better daily habits";
+"onboarding.intro.message" = "CheckInDuck helps you plan tasks, get reminders before deadlines, and automatically check off progress from app usage.";
+"onboarding.notifications.title" = "Turn on reminders";
+"onboarding.notifications.message" = "Enable notifications so CheckInDuck can remind you before a task is due and again when the deadline arrives.";
+"onboarding.notifications.enable" = "Enable Notifications";
+"onboarding.notifications.open_settings" = "Open Settings";
+"onboarding.notifications.skip" = "Set up later";
+"onboarding.family.title" = "Connect Family Controls";
+"onboarding.family.message" = "Authorize Family Controls so CheckInDuck can monitor selected apps and automatically complete tasks when your usage goal is reached.";
+"onboarding.family.enable" = "Enable Family Controls";
+"onboarding.family.finish" = "Start Using CheckInDuck";
+"onboarding.family.finish_later" = "Finish later";
+"onboarding.common.continue" = "Continue";
+"launch.title" = "CheckInDuck";
+"launch.subtitle" = "Daily check-ins for what matters today";
 
 "status.pending" = "Pending";
 "status.completed" = "Completed";

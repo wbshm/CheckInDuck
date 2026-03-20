@@ -9,10 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var isShowingLaunchScreen = true
+    @State private var hasCompletedOnboarding = AppPreferences.hasCompletedOnboarding()
 
     var body: some View {
         ZStack {
-            RootTabView()
+            mainContent
                 .allowsHitTesting(!isShowingLaunchScreen)
 
             if isShowingLaunchScreen {
@@ -28,6 +29,21 @@ struct ContentView: View {
             withAnimation(.easeOut(duration: 0.22)) {
                 isShowingLaunchScreen = false
             }
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        if hasCompletedOnboarding {
+            RootTabView()
+        } else {
+            OnboardingView {
+                AppPreferences.setHasCompletedOnboarding(true)
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    hasCompletedOnboarding = true
+                }
+            }
+            .transition(.opacity)
         }
     }
 }
