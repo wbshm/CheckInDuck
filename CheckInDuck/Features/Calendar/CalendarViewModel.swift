@@ -8,6 +8,14 @@ struct CalendarDaySummary: Equatable {
     let missedCount: Int
     let isRestricted: Bool
 
+    var totalCount: Int {
+        completedCount + pendingCount + missedCount
+    }
+
+    var hasData: Bool {
+        !isRestricted && totalCount > 0
+    }
+
     var primaryStatus: DailyTaskStatus? {
         guard !isRestricted else { return nil }
         if missedCount > 0 { return .missed }
@@ -33,6 +41,41 @@ struct CalendarDaySummary: Equatable {
     }
 }
 
+struct CalendarDayTaskDetail: Identifiable, Equatable {
+    let id: String
+    let taskID: UUID?
+    let taskName: String
+    let status: DailyTaskStatus
+    let completionSource: CompletionSource?
+}
+
+struct CalendarDayDetail: Equatable {
+    let date: Date
+    let summary: CalendarDaySummary
+    let taskDetails: [CalendarDayTaskDetail]
+}
+
+struct CalendarDailyActivity: Identifiable, Equatable {
+    let date: Date
+    let day: Int
+    let totalCount: Int
+    let completedCount: Int
+
+    var id: Date { date }
+}
+
+struct CalendarMonthInsights: Equatable {
+    let monthStart: Date
+    let dayCount: Int
+    let activeDays: Int
+    let completedCount: Int
+    let pendingCount: Int
+    let missedCount: Int
+    let completionRate: Double?
+    let dailyActivities: [CalendarDailyActivity]
+    let peakActivity: CalendarDailyActivity?
+}
+
 struct CalendarGridCell: Identifiable, Equatable {
     let id: String
     let date: Date?
@@ -56,6 +99,7 @@ final class CalendarViewModel: ObservableObject {
     @Published private(set) var tasks: [HabitTask] = []
     @Published private(set) var records: [DailyRecord] = []
     @Published private(set) var monthAnchor: Date
+    @Published var selectedDate: Date?
 
     private let taskStore: TaskStore
     private let dailyRecordStore: DailyRecordStore
@@ -94,17 +138,35 @@ final class CalendarViewModel: ObservableObject {
     func reload() {
         tasks = taskStore.loadAll()
         records = dailyRecordStore.loadAll()
+        monthAnchor = clampedMonthAnchor(monthAnchor)
+        normalizeSelectionIfNeeded()
     }
 
     func moveMonth(by offset: Int) {
+        guard offset != 0 else { return }
+        if offset < 0 && !canMoveToPreviousMonth {
+            return
+        }
+        if offset > 0 && !canMoveToNextMonth {
+            return
+        }
         guard let moved = calendar.date(byAdding: .month, value: offset, to: monthAnchor) else {
             return
         }
-        monthAnchor = Self.startOfMonth(for: moved, calendar: calendar)
+        monthAnchor = clampedMonthAnchor(Self.startOfMonth(for: moved, calendar: calendar))
+        selectedDate = nil
     }
 
     var monthTitle: String {
         monthAnchor.formatted(.dateTime.year().month(.wide))
+    }
+
+    var canMoveToPreviousMonth: Bool {
+        monthAnchor > minimumMonthWithData
+    }
+
+    var canMoveToNextMonth: Bool {
+        monthAnchor < maximumMonthWithData
     }
 
     var weekdaySymbols: [String] {
@@ -124,6 +186,12 @@ final class CalendarViewModel: ObservableObject {
             return []
         }
 
+        let summaryByDate = Dictionary(
+            uniqueKeysWithValues: summariesForMonth(monthAnchor).map { summary in
+                (summary.date, summary)
+            }
+        )
+
         let weekday = calendar.component(.weekday, from: firstDay)
         let leadingPadding = (weekday - calendar.firstWeekday + 7) % 7
         var cells: [CalendarGridCell] = (0..<leadingPadding).map {
@@ -134,7 +202,9 @@ final class CalendarViewModel: ObservableObject {
             guard let date = calendar.date(byAdding: .day, value: day - 1, to: firstDay) else {
                 continue
             }
-            cells.append(.day(date: date, summary: summary(for: date)))
+            let dayStart = calendar.startOfDay(for: date)
+            let summary = summaryByDate[dayStart] ?? summary(for: dayStart)
+            cells.append(.day(date: dayStart, summary: summary))
         }
 
         let trailingPadding = (7 - (cells.count % 7)) % 7
@@ -144,92 +214,97 @@ final class CalendarViewModel: ObservableObject {
 
     func summary(for date: Date) -> CalendarDaySummary {
         let dayStart = calendar.startOfDay(for: date)
-        let todayStart = calendar.startOfDay(for: nowProvider())
-
-        if isRestricted(date: dayStart, todayStart: todayStart) {
-            return CalendarDaySummary(
-                date: dayStart,
-                completedCount: 0,
-                pendingCount: 0,
-                missedCount: 0,
-                isRestricted: true
-            )
-        }
-
-        if dayStart > todayStart {
-            return CalendarDaySummary(
-                date: dayStart,
-                completedCount: 0,
-                pendingCount: 0,
-                missedCount: 0,
-                isRestricted: false
-            )
-        }
-
-        let dayRecords = records.filter { calendar.isDate($0.date, inSameDayAs: dayStart) }
-        let dayRecordByTaskID = latestRecordByTaskID(records: dayRecords)
-
-        let candidateTasks = tasks.filter { task in
-            let createdDay = calendar.startOfDay(for: task.createdAt)
-            let hasRecordForDay = dayRecordByTaskID[task.id] != nil
-            return createdDay <= dayStart && (task.isEnabled || hasRecordForDay)
-        }
-
-        if candidateTasks.isEmpty && dayRecordByTaskID.isEmpty {
-            return CalendarDaySummary(
-                date: dayStart,
-                completedCount: 0,
-                pendingCount: 0,
-                missedCount: 0,
-                isRestricted: false
-            )
-        }
-
-        var completedCount = 0
-        var pendingCount = 0
-        var missedCount = 0
-        let evaluationNow = evaluationMoment(for: dayStart, todayStart: todayStart)
-        let candidateTaskIDs = Set(candidateTasks.map(\.id))
-
-        for task in candidateTasks {
-            let status = dayRecordByTaskID[task.id]?.status ?? statusCalculator.status(
-                for: task,
-                records: records,
-                now: evaluationNow
-            )
-            switch status {
-            case .completed:
-                completedCount += 1
-            case .pending:
-                pendingCount += 1
-            case .missed:
-                missedCount += 1
-            }
-        }
-
-        let outOfTaskRecords = dayRecordByTaskID.values.filter { !candidateTaskIDs.contains($0.taskId) }
-        for record in outOfTaskRecords {
-            switch record.status {
-            case .completed:
-                completedCount += 1
-            case .pending:
-                pendingCount += 1
-            case .missed:
-                missedCount += 1
-            }
-        }
-
-        return CalendarDaySummary(
-            date: dayStart,
-            completedCount: completedCount,
-            pendingCount: pendingCount,
-            missedCount: missedCount,
-            isRestricted: false
-        )
+        return dayComputation(for: dayStart).summary
     }
 
     func isToday(_ date: Date) -> Bool {
         calendar.isDate(date, inSameDayAs: nowProvider())
+    }
+
+    func isSelected(_ date: Date) -> Bool {
+        guard let selectedDate else {
+            return false
+        }
+        return calendar.isDate(selectedDate, inSameDayAs: date)
+    }
+
+    func selectDate(_ date: Date) {
+        let dayStart = calendar.startOfDay(for: date)
+        let summary = summary(for: dayStart)
+        guard summary.hasData else {
+            return
+        }
+        selectedDate = dayStart
+    }
+
+    var selectedDayDetail: CalendarDayDetail? {
+        guard let selectedDate else {
+            return nil
+        }
+        return dayDetail(for: selectedDate)
+    }
+
+    func dayDetail(for date: Date) -> CalendarDayDetail? {
+        let dayStart = calendar.startOfDay(for: date)
+        let computation = dayComputation(for: dayStart)
+        guard computation.summary.hasData else {
+            return nil
+        }
+        return CalendarDayDetail(
+            date: dayStart,
+            summary: computation.summary,
+            taskDetails: computation.taskDetails
+        )
+    }
+
+    func completionSourceText(for source: CompletionSource?) -> String? {
+        switch source {
+        case .manual:
+            return L10n.tr("history.source.manual")
+        case .appUsageThreshold:
+            return L10n.tr("history.source.app_usage")
+        case nil:
+            return nil
+        }
+    }
+
+    var monthInsights: CalendarMonthInsights {
+        let summaries = summariesForMonth(monthAnchor).filter { !$0.isRestricted }
+        let dayCount = summaries.count
+        let activeDays = summaries.filter(\.hasData).count
+        let completedCount = summaries.reduce(0) { $0 + $1.completedCount }
+        let pendingCount = summaries.reduce(0) { $0 + $1.pendingCount }
+        let missedCount = summaries.reduce(0) { $0 + $1.missedCount }
+        let totalCount = completedCount + pendingCount + missedCount
+        let completionRate = totalCount > 0 ? Double(completedCount) / Double(totalCount) : nil
+        let activities = summaries.map { summary in
+            CalendarDailyActivity(
+                date: summary.date,
+                day: calendar.component(.day, from: summary.date),
+                totalCount: summary.totalCount,
+                completedCount: summary.completedCount
+            )
+        }
+        let peakActivity = activities
+            .filter { $0.totalCount > 0 }
+            .max { lhs, rhs in
+                if lhs.totalCount == rhs.totalCount {
+                    return lhs.day > rhs.day
+                }
+                return lhs.totalCount < rhs.totalCount
+            }
+
+        return CalendarMonthInsights(
+            monthStart: monthAnchor,
+            dayCount: dayCount,
+            activeDays: activeDays,
+            completedCount: completedCount,
+            pendingCount: pendingCount,
+            missedCount: missedCount,
+            completionRate: completionRate,
+            dailyActivities: activities,
+            peakActivity: peakActivity
+        )
     }
 
     private func isRestricted(date: Date, todayStart: Date) -> Bool {
@@ -263,6 +338,237 @@ final class CalendarViewModel: ObservableObject {
 
     private func recordDate(for record: DailyRecord) -> Date {
         record.completedAt ?? record.date
+    }
+
+    private func dayComputation(for date: Date) -> (summary: CalendarDaySummary, taskDetails: [CalendarDayTaskDetail]) {
+        let dayStart = calendar.startOfDay(for: date)
+        let todayStart = calendar.startOfDay(for: nowProvider())
+
+        if isRestricted(date: dayStart, todayStart: todayStart) {
+            return (
+                CalendarDaySummary(
+                    date: dayStart,
+                    completedCount: 0,
+                    pendingCount: 0,
+                    missedCount: 0,
+                    isRestricted: true
+                ),
+                []
+            )
+        }
+
+        let dayRecords = records.filter { calendar.isDate($0.date, inSameDayAs: dayStart) }
+        let dayRecordByTaskID = latestRecordByTaskID(records: dayRecords)
+
+        if dayStart > todayStart && dayRecordByTaskID.isEmpty {
+            return (
+                CalendarDaySummary(
+                    date: dayStart,
+                    completedCount: 0,
+                    pendingCount: 0,
+                    missedCount: 0,
+                    isRestricted: false
+                ),
+                []
+            )
+        }
+
+        let candidateTasks = tasks.filter { task in
+            let createdDay = calendar.startOfDay(for: task.createdAt)
+            let hasRecordForDay = dayRecordByTaskID[task.id] != nil
+            guard createdDay <= dayStart else { return false }
+
+            if dayStart > todayStart {
+                return hasRecordForDay
+            }
+            return task.isEnabled || hasRecordForDay
+        }
+
+        if candidateTasks.isEmpty && dayRecordByTaskID.isEmpty {
+            return (
+                CalendarDaySummary(
+                    date: dayStart,
+                    completedCount: 0,
+                    pendingCount: 0,
+                    missedCount: 0,
+                    isRestricted: false
+                ),
+                []
+            )
+        }
+
+        var completedCount = 0
+        var pendingCount = 0
+        var missedCount = 0
+        var taskDetails: [CalendarDayTaskDetail] = []
+        let evaluationNow = evaluationMoment(for: dayStart, todayStart: todayStart)
+        let candidateTaskIDs = Set(candidateTasks.map(\.id))
+
+        for task in candidateTasks {
+            let record = dayRecordByTaskID[task.id]
+            let status = record?.status ?? statusCalculator.status(
+                for: task,
+                records: records,
+                now: evaluationNow
+            )
+            increment(status, completedCount: &completedCount, pendingCount: &pendingCount, missedCount: &missedCount)
+
+            taskDetails.append(
+                CalendarDayTaskDetail(
+                    id: "task-\(task.id.uuidString)",
+                    taskID: task.id,
+                    taskName: task.name,
+                    status: status,
+                    completionSource: record?.completionSource
+                )
+            )
+        }
+
+        let outOfTaskRecords = dayRecordByTaskID.values.filter { !candidateTaskIDs.contains($0.taskId) }
+        for record in outOfTaskRecords {
+            increment(record.status, completedCount: &completedCount, pendingCount: &pendingCount, missedCount: &missedCount)
+            taskDetails.append(
+                CalendarDayTaskDetail(
+                    id: "orphan-\(record.id.uuidString)",
+                    taskID: record.taskId,
+                    taskName: L10n.tr("history.unknown_task"),
+                    status: record.status,
+                    completionSource: record.completionSource
+                )
+            )
+        }
+
+        let sortedTaskDetails = taskDetails.sorted { lhs, rhs in
+            let lhsPriority = statusPriority(lhs.status)
+            let rhsPriority = statusPriority(rhs.status)
+            if lhsPriority != rhsPriority {
+                return lhsPriority < rhsPriority
+            }
+            return lhs.taskName.localizedCaseInsensitiveCompare(rhs.taskName) == .orderedAscending
+        }
+
+        return (
+            CalendarDaySummary(
+                date: dayStart,
+                completedCount: completedCount,
+                pendingCount: pendingCount,
+                missedCount: missedCount,
+                isRestricted: false
+            ),
+            sortedTaskDetails
+        )
+    }
+
+    private func summariesForMonth(_ month: Date) -> [CalendarDaySummary] {
+        guard
+            let dayRange = calendar.range(of: .day, in: .month, for: month),
+            let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: month))
+        else {
+            return []
+        }
+
+        return dayRange.compactMap { day -> CalendarDaySummary? in
+            guard let date = calendar.date(byAdding: .day, value: day - 1, to: firstDay) else {
+                return nil
+            }
+            return dayComputation(for: date).summary
+        }
+    }
+
+    private func increment(
+        _ status: DailyTaskStatus,
+        completedCount: inout Int,
+        pendingCount: inout Int,
+        missedCount: inout Int
+    ) {
+        switch status {
+        case .completed:
+            completedCount += 1
+        case .pending:
+            pendingCount += 1
+        case .missed:
+            missedCount += 1
+        }
+    }
+
+    private func statusPriority(_ status: DailyTaskStatus) -> Int {
+        switch status {
+        case .missed:
+            return 0
+        case .pending:
+            return 1
+        case .completed:
+            return 2
+        }
+    }
+
+    private var minimumMonthWithData: Date {
+        Self.startOfMonth(for: minimumVisibleDate, calendar: calendar)
+    }
+
+    private var maximumMonthWithData: Date {
+        Self.startOfMonth(for: maximumVisibleDate, calendar: calendar)
+    }
+
+    private var minimumVisibleDate: Date {
+        let todayStart = calendar.startOfDay(for: nowProvider())
+        var candidates: [Date] = [todayStart]
+        candidates.append(contentsOf: tasks.map { calendar.startOfDay(for: $0.createdAt) })
+        candidates.append(contentsOf: records.map { calendar.startOfDay(for: $0.date) })
+
+        let rawMinimum = candidates.min() ?? todayStart
+        guard
+            let lookbackDays = subscriptionAccess.historyLookbackDays(),
+            let cutoff = calendar.date(byAdding: .day, value: -(lookbackDays - 1), to: todayStart)
+        else {
+            return rawMinimum
+        }
+        return maxDate(rawMinimum, cutoff)
+    }
+
+    private var maximumVisibleDate: Date {
+        let todayStart = calendar.startOfDay(for: nowProvider())
+        let latestRecordDate = records
+            .map { calendar.startOfDay(for: $0.date) }
+            .max() ?? todayStart
+        return maxDate(todayStart, latestRecordDate)
+    }
+
+    private func clampedMonthAnchor(_ month: Date) -> Date {
+        let normalizedMonth = Self.startOfMonth(for: month, calendar: calendar)
+        if normalizedMonth < minimumMonthWithData {
+            return minimumMonthWithData
+        }
+        if normalizedMonth > maximumMonthWithData {
+            return maximumMonthWithData
+        }
+        return normalizedMonth
+    }
+
+    private func normalizeSelectionIfNeeded() {
+        guard let selectedDate else {
+            selectDefaultDateIfNeeded()
+            return
+        }
+        let dayStart = calendar.startOfDay(for: selectedDate)
+        if !calendar.isDate(dayStart, equalTo: monthAnchor, toGranularity: .month) {
+            self.selectedDate = nil
+            selectDefaultDateIfNeeded()
+            return
+        }
+        self.selectedDate = dayStart
+    }
+
+    private func selectDefaultDateIfNeeded() {
+        let todayStart = calendar.startOfDay(for: nowProvider())
+        guard calendar.isDate(todayStart, equalTo: monthAnchor, toGranularity: .month) else {
+            return
+        }
+        selectedDate = todayStart
+    }
+
+    private func maxDate(_ lhs: Date, _ rhs: Date) -> Date {
+        lhs > rhs ? lhs : rhs
     }
 
     private static func startOfMonth(for date: Date, calendar: Calendar) -> Date {

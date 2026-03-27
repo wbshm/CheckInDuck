@@ -494,6 +494,162 @@ struct CheckInDuckTests {
         #expect(summary.missedCount == 1)
         #expect(summary.primaryStatus == .missed)
     }
+
+    @MainActor
+    @Test
+    func calendarMonthNavigationIsLockedWhenNoPastOrFutureData() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        let anchorBeforeMove = viewModel.monthAnchor
+        #expect(viewModel.canMoveToPreviousMonth == false)
+        #expect(viewModel.canMoveToNextMonth == false)
+
+        viewModel.moveMonth(by: -1)
+        #expect(viewModel.monthAnchor == anchorBeforeMove)
+        viewModel.moveMonth(by: 1)
+        #expect(viewModel.monthAnchor == anchorBeforeMove)
+    }
+
+    @MainActor
+    @Test
+    func calendarMonthNavigationAllowsPreviousMonthWhenHistoricalDataExists() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+        let historicalDate = calendar.date(byAdding: .month, value: -2, to: now) ?? now
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        recordStore.saveAll([
+            DailyRecord(taskId: UUID(), date: historicalDate, status: .completed)
+        ])
+
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        #expect(viewModel.canMoveToPreviousMonth)
+        #expect(viewModel.canMoveToNextMonth == false)
+    }
+
+    @MainActor
+    @Test
+    func calendarSelectDateOnlyWorksForDaysWithData() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        let dataDay = calendar.date(byAdding: .day, value: 4, to: monthStart) ?? now
+        let emptyDay = calendar.date(byAdding: .day, value: 6, to: monthStart) ?? now
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        recordStore.saveAll([
+            DailyRecord(taskId: UUID(), date: dataDay, status: .completed, completionSource: .manual)
+        ])
+
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        let initialSelectedDate = viewModel.selectedDate
+        #expect(initialSelectedDate == calendar.startOfDay(for: now))
+
+        viewModel.selectDate(emptyDay)
+        #expect(viewModel.selectedDate == initialSelectedDate)
+
+        viewModel.selectDate(dataDay)
+        #expect(viewModel.selectedDate != nil)
+        #expect(viewModel.selectedDayDetail != nil)
+        #expect(viewModel.selectedDayDetail?.summary.completedCount == 1)
+        #expect(viewModel.selectedDayDetail?.taskDetails.isEmpty == false)
+    }
+
+    @MainActor
+    @Test
+    func calendarDefaultsToSelectingToday() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        #expect(viewModel.selectedDate == calendar.startOfDay(for: now))
+    }
+
+    @MainActor
+    @Test
+    func calendarMonthInsightsAggregatesRecordCounts() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        let day1 = calendar.date(byAdding: .day, value: 1, to: monthStart) ?? now
+        let day2 = calendar.date(byAdding: .day, value: 2, to: monthStart) ?? now
+        let day3 = calendar.date(byAdding: .day, value: 3, to: monthStart) ?? now
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        recordStore.saveAll([
+            DailyRecord(taskId: UUID(), date: day1, status: .completed),
+            DailyRecord(taskId: UUID(), date: day2, status: .pending),
+            DailyRecord(taskId: UUID(), date: day3, status: .missed)
+        ])
+
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        let insights = viewModel.monthInsights
+        #expect(insights.activeDays == 3)
+        #expect(insights.completedCount == 1)
+        #expect(insights.pendingCount == 1)
+        #expect(insights.missedCount == 1)
+        #expect(insights.completionRate != nil)
+        #expect(abs((insights.completionRate ?? 0) - (1.0 / 3.0)) < 0.000_1)
+    }
 }
 
 private final class InMemoryKeyValueStore: KeyValueStoring {
