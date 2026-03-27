@@ -3,7 +3,7 @@ import SwiftUI
 struct LaunchScreenView: View {
     var body: some View {
         ZStack {
-            Color.white
+            Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
