@@ -100,6 +100,8 @@
 - 预提醒保持普通优先级（`interruptionLevel = .active`），并在通知授权时追加 `timeSensitive` 选项申请
 - 新增回归测试：`deadlineReminderUsesTimeSensitiveInterruptionLevel`、`preDeadlineReminderUsesActiveInterruptionLevel`
 - 主 App entitlement 增加 `com.apple.developer.usernotifications.time-sensitive`，补齐系统“Time Sensitive Notifications”设置入口前提
+- 根 Tab 将“历史”替换为“日历”，并在日历页右上角新增“历史”入口跳转至原历史页
+- 新增日历状态视图：按日展示任务状态颜色（`completed=绿`、`pending=橙`、`missed=红`），并补充对应单测
 
 ## T22 执行记录（最近补充）
 

@@ -397,6 +397,103 @@ struct CheckInDuckTests {
         #expect(secondSecond != nil)
         #expect(firstSecond != secondSecond)
     }
+
+    @MainActor
+    @Test
+    func calendarSummaryForTodayShowsMixedStatusesWithPriority() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_710_000_000)
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let createdAt = calendar.date(byAdding: .day, value: -3, to: now) ?? now
+        let todayStart = calendar.startOfDay(for: now)
+
+        let completedTask = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000A1")!,
+            name: "Completed",
+            deadline: DailyDeadline(hour: 23, minute: 0),
+            isEnabled: true,
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+        let pendingTask = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000A2")!,
+            name: "Pending",
+            deadline: DailyDeadline(hour: 23, minute: 0),
+            isEnabled: true,
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+        let missedTask = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000A3")!,
+            name: "Missed",
+            deadline: DailyDeadline(hour: 21, minute: 0),
+            isEnabled: true,
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+        taskStore.saveAll([completedTask, pendingTask, missedTask])
+        recordStore.saveAll([
+            DailyRecord(taskId: completedTask.id, date: todayStart, status: .completed, completionSource: .manual),
+            DailyRecord(taskId: missedTask.id, date: todayStart, status: .missed)
+        ])
+
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        let summary = viewModel.summary(for: now)
+        #expect(summary.completedCount == 1)
+        #expect(summary.pendingCount == 1)
+        #expect(summary.missedCount == 1)
+        #expect(summary.primaryStatus == .missed)
+    }
+
+    @MainActor
+    @Test
+    func calendarSummaryForPastDayMarksMissingRecordAsMissed() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_710_000_000)
+        let pastDay = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+        let createdAt = calendar.date(byAdding: .day, value: -5, to: now) ?? now
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let task = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000B1")!,
+            name: "Workout",
+            deadline: DailyDeadline(hour: 20, minute: 0),
+            isEnabled: true,
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+        taskStore.saveAll([task])
+
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        let summary = viewModel.summary(for: pastDay)
+        #expect(summary.completedCount == 0)
+        #expect(summary.pendingCount == 0)
+        #expect(summary.missedCount == 1)
+        #expect(summary.primaryStatus == .missed)
+    }
 }
 
 private final class InMemoryKeyValueStore: KeyValueStoring {
@@ -465,6 +562,48 @@ private final class TrackingReminderScheduling: ReminderScheduling {
 
     func scheduleCount(for taskID: UUID) async -> Int {
         await state.scheduleCount(for: taskID)
+    }
+}
+
+@MainActor
+private final class StubSubscriptionAccess: SubscriptionAccessProviding {
+    private(set) var currentTier: SubscriptionTier
+    private let lookbackDaysOverride: Int?
+
+    init(
+        currentTier: SubscriptionTier = .premium,
+        lookbackDaysOverride: Int? = nil
+    ) {
+        self.currentTier = currentTier
+        self.lookbackDaysOverride = lookbackDaysOverride
+    }
+
+    func isFeatureEnabled(_ feature: AppFeature) -> Bool {
+        currentTier == .premium
+    }
+
+    func canCreateTask(currentTaskCount: Int) -> Bool {
+        switch currentTier {
+        case .free:
+            return currentTaskCount < SubscriptionAccessService.freeTaskLimit
+        case .premium:
+            return true
+        }
+    }
+
+    func canViewFullHistory() -> Bool {
+        historyLookbackDays() == nil
+    }
+
+    func historyLookbackDays() -> Int? {
+        if let lookbackDaysOverride {
+            return lookbackDaysOverride
+        }
+        return currentTier == .premium ? nil : SubscriptionAccessService.freeHistoryLookbackDays
+    }
+
+    func updateTier(_ tier: SubscriptionTier) {
+        currentTier = tier
     }
 }
 

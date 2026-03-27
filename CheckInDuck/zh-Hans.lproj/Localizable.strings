@@ -1,5 +1,6 @@
 "Today" = "计划";
 "History" = "历史";
+"Calendar" = "日历";
 "Settings" = "设置";
 "Today's Tasks" = "今日任务";
 "Review your current CheckInDuck task status at a glance." = "一眼查看 CheckInDuck 当前任务状态。";
@@ -144,3 +145,6 @@
 "today.filter.all" = "全部";
 "No tasks match the selected filter." = "当前筛选条件下没有任务。";
 "create_task.selection.categories_websites" = "分类：%d，网站：%d";
+"calendar.previous_month" = "上个月";
+"calendar.next_month" = "下个月";
+"calendar.restricted_day" = "受限日期";

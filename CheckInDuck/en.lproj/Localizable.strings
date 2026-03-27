@@ -1,5 +1,6 @@
 "Today" = "Plan";
 "History" = "History";
+"Calendar" = "Calendar";
 "Settings" = "Settings";
 "Today's Tasks" = "Today's Tasks";
 "Review your current CheckInDuck task status at a glance." = "Review your current CheckInDuck task status at a glance.";
@@ -144,3 +145,6 @@
 "today.filter.all" = "All";
 "No tasks match the selected filter." = "No tasks match the selected filter.";
 "create_task.selection.categories_websites" = "Categories: %d, Websites: %d";
+"calendar.previous_month" = "Previous month";
+"calendar.next_month" = "Next month";
+"calendar.restricted_day" = "Restricted day";

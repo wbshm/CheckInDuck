@@ -17,9 +17,9 @@ struct RootTabView: View {
                     Label("Today", systemImage: "checklist")
                 }
 
-            HistoryView(subscriptionAccess: subscriptionAccess)
+            CalendarView(subscriptionAccess: subscriptionAccess)
                 .tabItem {
-                    Label("History", systemImage: "clock.arrow.circlepath")
+                    Label("Calendar", systemImage: "calendar")
                 }
 
             SettingsView(subscriptionAccess: subscriptionAccess)

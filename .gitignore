@@ -23,6 +23,11 @@ project.xcworkspace/
 workspace.xcworkspace/
 !default.xcworkspace
 xcshareddata/
+!CheckInDuck.xcodeproj/xcshareddata/
+CheckInDuck.xcodeproj/xcshareddata/*
+!CheckInDuck.xcodeproj/xcshareddata/xcschemes/
+CheckInDuck.xcodeproj/xcshareddata/xcschemes/*
+!CheckInDuck.xcodeproj/xcshareddata/xcschemes/CheckInDuck.xcscheme
 
 # Swift 专属
 ## Swift Package Manager
