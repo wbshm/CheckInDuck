@@ -165,3 +165,10 @@
 "calendar.day_detail.empty" = "当天还没有可展示的任务详情。";
 "calendar.day_detail.empty_hint" = "完成任务后会显示在这里，也可以切换到其他有数据的日期。";
 "calendar.metric.days_value" = "%d 天";
+"calendar.note.title" = "备注";
+"calendar.note.placeholder" = "给这一天写点备注";
+"calendar.note.save" = "保存";
+"calendar.note.remove" = "删除";
+"calendar.note.marker" = "有备注";
+"calendar.note.add" = "添加";
+"calendar.note.edit" = "编辑";

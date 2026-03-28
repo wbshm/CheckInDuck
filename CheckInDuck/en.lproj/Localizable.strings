@@ -165,3 +165,10 @@
 "calendar.day_detail.empty" = "No task details for this day yet.";
 "calendar.day_detail.empty_hint" = "Complete a task or select another highlighted day.";
 "calendar.metric.days_value" = "%d day(s)";
+"calendar.note.title" = "Note";
+"calendar.note.placeholder" = "Add a note for this day";
+"calendar.note.save" = "Save";
+"calendar.note.remove" = "Delete";
+"calendar.note.marker" = "Has note";
+"calendar.note.add" = "Add";
+"calendar.note.edit" = "Edit";

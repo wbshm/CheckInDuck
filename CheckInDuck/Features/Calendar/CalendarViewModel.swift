@@ -7,6 +7,7 @@ struct CalendarDaySummary: Equatable {
     let pendingCount: Int
     let missedCount: Int
     let isRestricted: Bool
+    let hasNote: Bool
 
     var totalCount: Int {
         completedCount + pendingCount + missedCount
@@ -14,6 +15,10 @@ struct CalendarDaySummary: Equatable {
 
     var hasData: Bool {
         !isRestricted && totalCount > 0
+    }
+
+    var hasContent: Bool {
+        !isRestricted && (totalCount > 0 || hasNote)
     }
 
     var primaryStatus: DailyTaskStatus? {
@@ -53,6 +58,7 @@ struct CalendarDayDetail: Equatable {
     let date: Date
     let summary: CalendarDaySummary
     let taskDetails: [CalendarDayTaskDetail]
+    let noteText: String?
 }
 
 struct CalendarDailyActivity: Identifiable, Equatable {
@@ -98,11 +104,13 @@ struct CalendarGridCell: Identifiable, Equatable {
 final class CalendarViewModel: ObservableObject {
     @Published private(set) var tasks: [HabitTask] = []
     @Published private(set) var records: [DailyRecord] = []
+    @Published private(set) var notes: [CalendarDayNote] = []
     @Published private(set) var monthAnchor: Date
     @Published var selectedDate: Date?
 
     private let taskStore: TaskStore
     private let dailyRecordStore: DailyRecordStore
+    private let dayNoteStore: CalendarDayNoteStore
     private let calendar: Calendar
     private let statusCalculator: DailyStatusCalculator
     private let subscriptionAccess: SubscriptionAccessProviding
@@ -112,6 +120,7 @@ final class CalendarViewModel: ObservableObject {
         self.init(
             taskStore: TaskStore(),
             dailyRecordStore: DailyRecordStore(),
+            dayNoteStore: CalendarDayNoteStore(),
             calendar: .current,
             subscriptionAccess: subscriptionAccess
         )
@@ -120,6 +129,7 @@ final class CalendarViewModel: ObservableObject {
     init(
         taskStore: TaskStore,
         dailyRecordStore: DailyRecordStore,
+        dayNoteStore: CalendarDayNoteStore? = nil,
         calendar: Calendar,
         subscriptionAccess: SubscriptionAccessProviding,
         monthAnchor: Date = Date(),
@@ -127,6 +137,7 @@ final class CalendarViewModel: ObservableObject {
     ) {
         self.taskStore = taskStore
         self.dailyRecordStore = dailyRecordStore
+        self.dayNoteStore = dayNoteStore ?? CalendarDayNoteStore()
         self.calendar = calendar
         self.statusCalculator = DailyStatusCalculator(calendar: calendar)
         self.subscriptionAccess = subscriptionAccess
@@ -138,6 +149,7 @@ final class CalendarViewModel: ObservableObject {
     func reload() {
         tasks = taskStore.loadAll()
         records = dailyRecordStore.loadAll()
+        notes = dayNoteStore.loadAll()
         monthAnchor = clampedMonthAnchor(monthAnchor)
         normalizeSelectionIfNeeded()
     }
@@ -231,7 +243,7 @@ final class CalendarViewModel: ObservableObject {
     func selectDate(_ date: Date) {
         let dayStart = calendar.startOfDay(for: date)
         let summary = summary(for: dayStart)
-        guard summary.hasData else {
+        guard summary.hasContent else {
             return
         }
         selectedDate = dayStart
@@ -247,14 +259,26 @@ final class CalendarViewModel: ObservableObject {
     func dayDetail(for date: Date) -> CalendarDayDetail? {
         let dayStart = calendar.startOfDay(for: date)
         let computation = dayComputation(for: dayStart)
-        guard computation.summary.hasData else {
+        guard computation.summary.hasContent else {
             return nil
         }
         return CalendarDayDetail(
             date: dayStart,
             summary: computation.summary,
-            taskDetails: computation.taskDetails
+            taskDetails: computation.taskDetails,
+            noteText: noteText(for: dayStart)
         )
+    }
+
+    func noteText(for date: Date) -> String? {
+        let dayStart = calendar.startOfDay(for: date)
+        return notes.first(where: { calendar.isDate($0.date, inSameDayAs: dayStart) })?.text
+    }
+
+    func updateNote(_ text: String, for date: Date) {
+        let dayStart = calendar.startOfDay(for: date)
+        dayNoteStore.upsert(text: text, for: dayStart, calendar: calendar)
+        notes = dayNoteStore.loadAll()
     }
 
     func completionSourceText(for source: CompletionSource?) -> String? {
@@ -343,6 +367,8 @@ final class CalendarViewModel: ObservableObject {
     private func dayComputation(for date: Date) -> (summary: CalendarDaySummary, taskDetails: [CalendarDayTaskDetail]) {
         let dayStart = calendar.startOfDay(for: date)
         let todayStart = calendar.startOfDay(for: nowProvider())
+        let noteText = noteText(for: dayStart)
+        let hasNote = !(noteText?.isEmpty ?? true)
 
         if isRestricted(date: dayStart, todayStart: todayStart) {
             return (
@@ -351,7 +377,8 @@ final class CalendarViewModel: ObservableObject {
                     completedCount: 0,
                     pendingCount: 0,
                     missedCount: 0,
-                    isRestricted: true
+                    isRestricted: true,
+                    hasNote: false
                 ),
                 []
             )
@@ -367,7 +394,8 @@ final class CalendarViewModel: ObservableObject {
                     completedCount: 0,
                     pendingCount: 0,
                     missedCount: 0,
-                    isRestricted: false
+                    isRestricted: false,
+                    hasNote: hasNote
                 ),
                 []
             )
@@ -391,7 +419,8 @@ final class CalendarViewModel: ObservableObject {
                     completedCount: 0,
                     pendingCount: 0,
                     missedCount: 0,
-                    isRestricted: false
+                    isRestricted: false,
+                    hasNote: hasNote
                 ),
                 []
             )
@@ -453,7 +482,8 @@ final class CalendarViewModel: ObservableObject {
                 completedCount: completedCount,
                 pendingCount: pendingCount,
                 missedCount: missedCount,
-                isRestricted: false
+                isRestricted: false,
+                hasNote: hasNote
             ),
             sortedTaskDetails
         )
@@ -515,6 +545,7 @@ final class CalendarViewModel: ObservableObject {
         var candidates: [Date] = [todayStart]
         candidates.append(contentsOf: tasks.map { calendar.startOfDay(for: $0.createdAt) })
         candidates.append(contentsOf: records.map { calendar.startOfDay(for: $0.date) })
+        candidates.append(contentsOf: notes.map { calendar.startOfDay(for: $0.date) })
 
         let rawMinimum = candidates.min() ?? todayStart
         guard
@@ -531,7 +562,10 @@ final class CalendarViewModel: ObservableObject {
         let latestRecordDate = records
             .map { calendar.startOfDay(for: $0.date) }
             .max() ?? todayStart
-        return maxDate(todayStart, latestRecordDate)
+        let latestNoteDate = notes
+            .map { calendar.startOfDay(for: $0.date) }
+            .max() ?? todayStart
+        return maxDate(maxDate(todayStart, latestRecordDate), latestNoteDate)
     }
 
     private func clampedMonthAnchor(_ month: Date) -> Date {

@@ -650,6 +650,71 @@ struct CheckInDuckTests {
         #expect(insights.completionRate != nil)
         #expect(abs((insights.completionRate ?? 0) - (1.0 / 3.0)) < 0.000_1)
     }
+
+    @MainActor
+    @Test
+    func calendarNoteOnlyDayIsSelectableAndMarked() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        let noteDay = calendar.date(byAdding: .day, value: 7, to: monthStart) ?? now
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let noteStore = CalendarDayNoteStore(defaults: defaults)
+        noteStore.upsert(text: "Busy day", for: noteDay, calendar: calendar)
+
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            dayNoteStore: noteStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        let summary = viewModel.summary(for: noteDay)
+        #expect(summary.hasNote)
+        #expect(summary.hasData == false)
+        #expect(summary.hasContent)
+
+        viewModel.selectDate(noteDay)
+        #expect(viewModel.selectedDate == calendar.startOfDay(for: noteDay))
+        #expect(viewModel.dayDetail(for: noteDay)?.noteText == "Busy day")
+    }
+
+    @MainActor
+    @Test
+    func calendarUpdateNotePersistsForSelectedDay() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let noteStore = CalendarDayNoteStore(defaults: defaults)
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            dayNoteStore: noteStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        viewModel.updateNote("Review this day", for: now)
+        #expect(viewModel.noteText(for: now) == "Review this day")
+        #expect(viewModel.summary(for: now).hasNote)
+
+        viewModel.updateNote("", for: now)
+        #expect(viewModel.noteText(for: now) == nil)
+        #expect(viewModel.summary(for: now).hasNote == false)
+    }
 }
 
 private final class InMemoryKeyValueStore: KeyValueStoring {
