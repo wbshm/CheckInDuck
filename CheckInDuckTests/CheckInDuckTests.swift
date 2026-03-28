@@ -141,8 +141,37 @@ struct CheckInDuckTests {
         #expect(viewModel.taskName.isEmpty)
         #expect(viewModel.deadlineHour == 21)
         #expect(viewModel.deadlineMinute == 0)
+        #expect(viewModel.recurrence == .daily)
         #expect(viewModel.usageThresholdMinutes == 3)
         #expect(viewModel.selectedAppSelectionData == nil)
+    }
+
+    @MainActor
+    @Test
+    func createTaskViewModelBuildTaskIncludesRecurrenceAndEditingPreservesCreatedDate() async throws {
+        let viewModel = CreateTaskViewModel()
+        let originalCreatedAt = Date(timeIntervalSince1970: 1_710_000_000)
+        let existingTask = HabitTask(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            name: "Read",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 20, minute: 0),
+            recurrence: .weekly,
+            usageThresholdSeconds: 180,
+            isEnabled: true,
+            createdAt: originalCreatedAt,
+            updatedAt: originalCreatedAt
+        )
+
+        viewModel.loadDraft(from: existingTask)
+        viewModel.taskName = "Read Later"
+        viewModel.recurrence = .monthly
+
+        let updatedTask = viewModel.buildTask()
+
+        #expect(updatedTask?.id == existingTask.id)
+        #expect(updatedTask?.recurrence == .monthly)
+        #expect(updatedTask?.createdAt == originalCreatedAt)
     }
 
     @Test
@@ -398,6 +427,97 @@ struct CheckInDuckTests {
         #expect(firstSecond != secondSecond)
     }
 
+    @Test
+    func reminderScheduleIncludesWeeklyWeekdayComponents() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let referenceDate = Date(timeIntervalSince1970: 1_711_728_000)
+
+        let service = ReminderSchedulingService(
+            calendar: calendar,
+            nowProvider: { referenceDate }
+        )
+        let task = HabitTask(
+            name: "Workout",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 20, minute: 30),
+            recurrence: .weekly,
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [0]),
+            createdAt: referenceDate,
+            updatedAt: referenceDate
+        )
+
+        let components = service.reminderScheduleComponents(
+            for: task,
+            referenceDate: referenceDate
+        )
+
+        #expect(components.first?.triggerDate.weekday == calendar.component(.weekday, from: referenceDate))
+        #expect(components.first?.triggerDate.hour == 20)
+        #expect(components.first?.triggerDate.minute == 30)
+    }
+
+    @MainActor
+    @Test
+    func todayViewModelShowsOnlyTasksScheduledForToday() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_711_728_000)
+        let weeklyAnchor = calendar.date(byAdding: .day, value: -7, to: now) ?? now
+        let differentWeekdayAnchor = calendar.date(byAdding: .day, value: 1, to: weeklyAnchor) ?? weeklyAnchor
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let monitoring = MockAppUsageMonitoring()
+        let reminder = NoopReminderScheduling()
+        let completionEvents = StubAppUsageCompletionEvents()
+
+        let dailyTask = HabitTask(
+            name: "Daily",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 22, minute: 0),
+            recurrence: .daily,
+            isEnabled: true,
+            createdAt: weeklyAnchor,
+            updatedAt: weeklyAnchor
+        )
+        let weeklyTodayTask = HabitTask(
+            name: "Weekly Today",
+            appSelectionData: Data([0x02]),
+            deadline: DailyDeadline(hour: 22, minute: 0),
+            recurrence: .weekly,
+            isEnabled: true,
+            createdAt: weeklyAnchor,
+            updatedAt: weeklyAnchor
+        )
+        let weeklyOtherDayTask = HabitTask(
+            name: "Weekly Other Day",
+            appSelectionData: Data([0x03]),
+            deadline: DailyDeadline(hour: 22, minute: 0),
+            recurrence: .weekly,
+            isEnabled: true,
+            createdAt: differentWeekdayAnchor,
+            updatedAt: differentWeekdayAnchor
+        )
+        taskStore.saveAll([dailyTask, weeklyTodayTask, weeklyOtherDayTask])
+
+        let viewModel = TodayViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            reminderScheduling: reminder,
+            appUsageMonitoring: monitoring,
+            appUsageCompletionEvents: completionEvents,
+            nowProvider: { now }
+        )
+
+        #expect(viewModel.scheduledTasks.map(\.name) == ["Daily", "Weekly Today"])
+        #expect(viewModel.displayedTasks.map(\.name) == ["Daily", "Weekly Today"])
+    }
+
     @MainActor
     @Test
     func calendarSummaryForTodayShowsMixedStatusesWithPriority() async throws {
@@ -493,6 +613,43 @@ struct CheckInDuckTests {
         #expect(summary.pendingCount == 0)
         #expect(summary.missedCount == 1)
         #expect(summary.primaryStatus == .missed)
+    }
+
+    @MainActor
+    @Test
+    func calendarSummaryExcludesRecurringTaskOnNonMatchingDay() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_711_728_000)
+        let weeklyAnchor = calendar.date(byAdding: .day, value: -7, to: now) ?? now
+        let nonMatchingDay = calendar.date(byAdding: .day, value: 1, to: now) ?? now
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let task = HabitTask(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000C1")!,
+            name: "Weekly",
+            deadline: DailyDeadline(hour: 20, minute: 0),
+            recurrence: .weekly,
+            isEnabled: true,
+            createdAt: weeklyAnchor,
+            updatedAt: weeklyAnchor
+        )
+        taskStore.saveAll([task])
+
+        let viewModel = CalendarViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            subscriptionAccess: StubSubscriptionAccess(currentTier: .premium),
+            monthAnchor: now,
+            nowProvider: { now }
+        )
+
+        let summary = viewModel.summary(for: nonMatchingDay)
+        #expect(summary.totalCount == 0)
+        #expect(summary.hasData == false)
     }
 
     @MainActor

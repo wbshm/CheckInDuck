@@ -18,6 +18,9 @@ struct DailyStatusCalculator {
         guard task.isEnabled else {
             return .pending
         }
+        guard task.occurs(on: now, calendar: calendar) else {
+            return .pending
+        }
         return isPastDeadline(task: task, now: now) ? .missed : .pending
     }
 
@@ -30,6 +33,7 @@ struct DailyStatusCalculator {
 
         return tasks.compactMap { task in
             guard task.isEnabled else { return nil }
+            guard task.occurs(on: today, calendar: calendar) else { return nil }
             guard todayRecord(for: task.id, records: existingRecords, now: now) == nil else { return nil }
             guard isPastDeadline(task: task, now: now) else { return nil }
 

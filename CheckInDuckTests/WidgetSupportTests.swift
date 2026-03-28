@@ -65,6 +65,43 @@ struct WidgetSupportTests {
         #expect(snapshot.tasks.map(\.title) == ["Inbox Zero", "Read", "Standup"])
         #expect(snapshot.tasks.map(\.status) == [.pending, .missed, .completed])
     }
+
+    @Test
+    func widgetTaskStatusSnapshotBuilderExcludesRecurringTasksThatAreNotDueToday() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = ISO8601DateFormatter().date(from: "2026-03-18T15:00:00Z")!
+        let weeklyDueToday = HabitTask(
+            id: UUID(uuidString: "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE")!,
+            name: "Weekly Due",
+            deadline: DailyDeadline(hour: 20, minute: 0),
+            recurrence: .weekly,
+            isEnabled: true,
+            createdAt: ISO8601DateFormatter().date(from: "2026-03-11T09:00:00Z")!,
+            updatedAt: ISO8601DateFormatter().date(from: "2026-03-11T09:00:00Z")!
+        )
+        let weeklyNotDueToday = HabitTask(
+            id: UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")!,
+            name: "Weekly Off",
+            deadline: DailyDeadline(hour: 20, minute: 0),
+            recurrence: .weekly,
+            isEnabled: true,
+            createdAt: ISO8601DateFormatter().date(from: "2026-03-12T09:00:00Z")!,
+            updatedAt: ISO8601DateFormatter().date(from: "2026-03-12T09:00:00Z")!
+        )
+
+        let builder = WidgetTaskStatusSnapshotBuilder(calendar: calendar)
+        let snapshot = builder.build(
+            tasks: [weeklyDueToday, weeklyNotDueToday],
+            records: [],
+            now: now
+        )
+
+        #expect(snapshot.tasks.map(\.title) == ["Weekly Due"])
+        #expect(snapshot.pendingCount == 1)
+        #expect(snapshot.completedCount == 0)
+        #expect(snapshot.missedCount == 0)
+    }
 }
 
 private final class InMemoryKeyValueStore: KeyValueStoring {

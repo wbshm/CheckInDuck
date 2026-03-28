@@ -1,10 +1,106 @@
 import Foundation
 
+enum TaskRecurrence: String, Codable, CaseIterable, Identifiable {
+    case daily
+    case weekly
+    case monthly
+    case yearly
+
+    var id: String { rawValue }
+
+    var localizedTitle: String {
+        switch self {
+        case .daily:
+            return L10n.tr("task.recurrence.daily")
+        case .weekly:
+            return L10n.tr("task.recurrence.weekly")
+        case .monthly:
+            return L10n.tr("task.recurrence.monthly")
+        case .yearly:
+            return L10n.tr("task.recurrence.yearly")
+        }
+    }
+
+    func summaryText(startDate: Date, calendar: Calendar) -> String {
+        switch self {
+        case .daily:
+            return localizedTitle
+        case .weekly:
+            let formatter = DateFormatter()
+            formatter.calendar = calendar
+            formatter.locale = Locale.current
+            formatter.setLocalizedDateFormatFromTemplate("EEEE")
+            let weekday = formatter.string(from: startDate)
+            return L10n.format("task.recurrence.summary.weekly", weekday)
+        case .monthly:
+            let day = calendar.component(.day, from: startDate)
+            return L10n.format("task.recurrence.summary.monthly", day)
+        case .yearly:
+            let formatter = DateFormatter()
+            formatter.calendar = calendar
+            formatter.locale = Locale.current
+            formatter.setLocalizedDateFormatFromTemplate("MMMMd")
+            let dateText = formatter.string(from: startDate)
+            return L10n.format("task.recurrence.summary.yearly", dateText)
+        }
+    }
+
+    func occurs(on date: Date, startDate: Date, calendar: Calendar) -> Bool {
+        let targetDay = calendar.startOfDay(for: date)
+        let anchorDay = calendar.startOfDay(for: startDate)
+        guard targetDay >= anchorDay else { return false }
+
+        switch self {
+        case .daily:
+            return true
+        case .weekly:
+            return calendar.component(.weekday, from: targetDay) == calendar.component(.weekday, from: anchorDay)
+        case .monthly:
+            return calendar.component(.day, from: targetDay) == calendar.component(.day, from: anchorDay)
+        case .yearly:
+            let targetComponents = calendar.dateComponents([.month, .day], from: targetDay)
+            let anchorComponents = calendar.dateComponents([.month, .day], from: anchorDay)
+            return targetComponents.month == anchorComponents.month &&
+                targetComponents.day == anchorComponents.day
+        }
+    }
+
+    func repeatingDateComponents(
+        from date: Date,
+        calendar: Calendar,
+        includeTime: Bool,
+        second: Int? = nil
+    ) -> DateComponents {
+        var components: Set<Calendar.Component> = []
+        switch self {
+        case .daily:
+            break
+        case .weekly:
+            components.insert(.weekday)
+        case .monthly:
+            components.insert(.day)
+        case .yearly:
+            components.formUnion([.month, .day])
+        }
+
+        if includeTime {
+            components.formUnion([.hour, .minute])
+        }
+
+        var result = calendar.dateComponents(components, from: date)
+        if let second {
+            result.second = second
+        }
+        return result
+    }
+}
+
 struct HabitTask: Identifiable, Codable, Equatable {
     var id: UUID
     var name: String
     var appSelectionData: Data?
     var deadline: DailyDeadline
+    var recurrence: TaskRecurrence
     var usageThresholdSeconds: Int
     var isEnabled: Bool
     var reminderConfig: ReminderConfig
@@ -16,6 +112,7 @@ struct HabitTask: Identifiable, Codable, Equatable {
         name: String,
         appSelectionData: Data? = nil,
         deadline: DailyDeadline,
+        recurrence: TaskRecurrence = .daily,
         usageThresholdSeconds: Int = 180,
         isEnabled: Bool = true,
         reminderConfig: ReminderConfig = .default,
@@ -26,6 +123,7 @@ struct HabitTask: Identifiable, Codable, Equatable {
         self.name = name
         self.appSelectionData = appSelectionData
         self.deadline = deadline
+        self.recurrence = recurrence
         self.usageThresholdSeconds = usageThresholdSeconds
         self.isEnabled = isEnabled
         self.reminderConfig = reminderConfig
@@ -39,6 +137,7 @@ struct HabitTask: Identifiable, Codable, Equatable {
         case appSelectionData
         case familyActivitySelectionData
         case deadline
+        case recurrence
         case usageThresholdSeconds
         case isEnabled
         case reminderConfig
@@ -54,6 +153,7 @@ struct HabitTask: Identifiable, Codable, Equatable {
             try container.decodeIfPresent(Data.self, forKey: .appSelectionData) ??
             container.decodeIfPresent(Data.self, forKey: .familyActivitySelectionData)
         deadline = try container.decode(DailyDeadline.self, forKey: .deadline)
+        recurrence = try container.decodeIfPresent(TaskRecurrence.self, forKey: .recurrence) ?? .daily
         usageThresholdSeconds = try container.decode(Int.self, forKey: .usageThresholdSeconds)
         isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
         reminderConfig = try container.decode(ReminderConfig.self, forKey: .reminderConfig)
@@ -67,10 +167,19 @@ struct HabitTask: Identifiable, Codable, Equatable {
         try container.encode(name, forKey: .name)
         try container.encodeIfPresent(appSelectionData, forKey: .appSelectionData)
         try container.encode(deadline, forKey: .deadline)
+        try container.encode(recurrence, forKey: .recurrence)
         try container.encode(usageThresholdSeconds, forKey: .usageThresholdSeconds)
         try container.encode(isEnabled, forKey: .isEnabled)
         try container.encode(reminderConfig, forKey: .reminderConfig)
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
+    }
+
+    func occurs(on date: Date, calendar: Calendar = .current) -> Bool {
+        recurrence.occurs(on: date, startDate: createdAt, calendar: calendar)
+    }
+
+    func recurrenceSummary(calendar: Calendar = .current) -> String {
+        recurrence.summaryText(startDate: createdAt, calendar: calendar)
     }
 }

@@ -29,6 +29,7 @@ struct WidgetTaskStatusSnapshotBuilder {
     ) -> WidgetTodaySnapshot {
         let visibleTasks = tasks
             .filter(\.isEnabled)
+            .filter { $0.occurs(on: now, calendar: calendar) }
             .map { task in
                 WidgetTaskStatusSnapshot(
                     title: task.name,

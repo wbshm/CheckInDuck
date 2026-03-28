@@ -70,8 +70,12 @@ final class ReminderSchedulingService: ReminderScheduling {
             guard let reminderDate = calendar.date(byAdding: .minute, value: -offset, to: deadlineToday) else {
                 return nil
             }
-            var triggerDate = calendar.dateComponents([.hour, .minute], from: reminderDate)
-            triggerDate.second = staggerSecond(for: task.id, offsetMinutes: offset)
+            let triggerDate = task.recurrence.repeatingDateComponents(
+                from: reminderDate,
+                calendar: calendar,
+                includeTime: true,
+                second: staggerSecond(for: task.id, offsetMinutes: offset)
+            )
             return (offsetMinutes: offset, triggerDate: triggerDate)
         }
     }

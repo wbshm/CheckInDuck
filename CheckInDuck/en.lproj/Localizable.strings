@@ -58,6 +58,7 @@
 "Privacy-first app usage habit tracker." = "Privacy-first app usage habit tracker.";
 "Task" = "Task";
 "Task name" = "Task name";
+"Repeat" = "Repeat";
 "Monitored Apps" = "Monitored Apps";
 "Selected" = "Selected";
 "Choose Apps" = "Choose Apps";
@@ -143,8 +144,16 @@
 "common.none" = "None";
 "common.minutes.short" = "%d min";
 "today.filter.all" = "All";
+"No tasks scheduled for today." = "No tasks scheduled for today.";
 "No tasks match the selected filter." = "No tasks match the selected filter.";
 "create_task.selection.categories_websites" = "Categories: %d, Websites: %d";
+"task.recurrence.daily" = "Daily";
+"task.recurrence.weekly" = "Weekly";
+"task.recurrence.monthly" = "Monthly";
+"task.recurrence.yearly" = "Yearly";
+"task.recurrence.summary.weekly" = "Weekly on %@";
+"task.recurrence.summary.monthly" = "Monthly on day %d";
+"task.recurrence.summary.yearly" = "Yearly on %@";
 "calendar.previous_month" = "Previous month";
 "calendar.next_month" = "Next month";
 "calendar.restricted_day" = "Restricted day";

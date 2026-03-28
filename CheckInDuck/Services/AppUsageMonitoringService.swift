@@ -37,9 +37,20 @@ final class AppUsageMonitoringService: AppUsageMonitoring {
             thresholdSeconds: thresholdSeconds
         )
         let recurringName = Self.activityName(for: task.id)
+        let startOfTaskDay = calendar.startOfDay(for: task.createdAt)
+        let intervalStart = task.recurrence.repeatingDateComponents(
+            from: startOfTaskDay,
+            calendar: calendar,
+            includeTime: true
+        )
+        let intervalEnd = task.recurrence.repeatingDateComponents(
+            from: startOfTaskDay.addingTimeInterval((23 * 60 * 60) + (59 * 60)),
+            calendar: calendar,
+            includeTime: true
+        )
         let recurringSchedule = DeviceActivitySchedule(
-            intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
+            intervalStart: intervalStart,
+            intervalEnd: intervalEnd,
             repeats: true
         )
         let monitoredActivityNames = Set(center.activities)

@@ -77,6 +77,16 @@ struct CreateTaskView: View {
                     )
                 }
 
+                Section {
+                    Picker("Repeat", selection: $viewModel.recurrence) {
+                        ForEach(TaskRecurrence.allCases) { recurrence in
+                            Text(recurrence.localizedTitle)
+                                .tag(recurrence)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
                 Section("Auto Check-in") {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {

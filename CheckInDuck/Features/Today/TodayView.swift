@@ -73,7 +73,7 @@ struct TodayView: View {
                 HStack(spacing: 8) {
                     SummaryChip(
                         title: L10n.tr("today.filter.all"),
-                        value: viewModel.tasks.count,
+                        value: viewModel.scheduledTasks.count,
                         color: .blue,
                         isSelected: viewModel.selectedFilter == .all
                     ) {
@@ -116,6 +116,9 @@ struct TodayView: View {
         Section("Tasks") {
             if viewModel.tasks.isEmpty {
                 Text("No tasks yet. Tap New Task to add one.")
+                    .foregroundStyle(.secondary)
+            } else if viewModel.scheduledTasks.isEmpty {
+                Text("No tasks scheduled for today.")
                     .foregroundStyle(.secondary)
             } else if viewModel.displayedTasks.isEmpty {
                 Text("No tasks match the selected filter.")

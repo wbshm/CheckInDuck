@@ -49,6 +49,7 @@ final class TodayViewModel: ObservableObject {
     private let reminderScheduling: ReminderScheduling
     private let appUsageMonitoring: AppUsageMonitoring
     private let appUsageCompletionEvents: AppUsageCompletionEventReading
+    private let nowProvider: () -> Date
     private var monitoringFingerprintByTaskID: [UUID: String] = [:]
 
     convenience init() {
@@ -68,7 +69,8 @@ final class TodayViewModel: ObservableObject {
         calendar: Calendar,
         reminderScheduling: ReminderScheduling,
         appUsageMonitoring: AppUsageMonitoring,
-        appUsageCompletionEvents: AppUsageCompletionEventReading
+        appUsageCompletionEvents: AppUsageCompletionEventReading,
+        nowProvider: @escaping () -> Date = Date.init
     ) {
         self.taskStore = taskStore
         self.dailyRecordStore = dailyRecordStore
@@ -77,6 +79,7 @@ final class TodayViewModel: ObservableObject {
         self.reminderScheduling = reminderScheduling
         self.appUsageMonitoring = appUsageMonitoring
         self.appUsageCompletionEvents = appUsageCompletionEvents
+        self.nowProvider = nowProvider
         reload()
         scheduleRemindersForEnabledTasks()
         startMonitoringForEnabledTasks()
@@ -183,7 +186,7 @@ final class TodayViewModel: ObservableObject {
     }
 
     func status(for task: HabitTask) -> DailyTaskStatus {
-        statusCalculator.status(for: task, records: records)
+        statusCalculator.status(for: task, records: records, now: nowProvider())
     }
 
     func deadlineText(for task: HabitTask) -> String {
@@ -191,19 +194,23 @@ final class TodayViewModel: ObservableObject {
     }
 
     var completedCount: Int {
-        tasks.filter { status(for: $0) == .completed }.count
+        scheduledTasks.filter { status(for: $0) == .completed }.count
     }
 
     var missedCount: Int {
-        tasks.filter { status(for: $0) == .missed }.count
+        scheduledTasks.filter { status(for: $0) == .missed }.count
     }
 
     var pendingCount: Int {
-        tasks.filter { status(for: $0) == .pending }.count
+        scheduledTasks.filter { status(for: $0) == .pending }.count
+    }
+
+    var scheduledTasks: [HabitTask] {
+        tasks.filter { $0.occurs(on: nowProvider(), calendar: calendar) }
     }
 
     var displayedTasks: [HabitTask] {
-        orderedTasks(tasks).filter { task in
+        orderedTasks(scheduledTasks).filter { task in
             guard let selectedStatus = selectedFilter.status else { return true }
             return status(for: task) == selectedStatus
         }
@@ -306,6 +313,13 @@ final class TodayViewModel: ObservableObject {
                 }
                 continue
             }
+            guard let task = tasks.first(where: { $0.id == taskID }) else {
+                continue
+            }
+            guard task.occurs(on: nowProvider(), calendar: calendar) else {
+                print("TodayViewModel: ignore completion event for inactive recurring task \(taskID.uuidString)")
+                continue
+            }
             markCompleted(taskID: taskID, source: .appUsageThreshold)
         }
     }
@@ -327,6 +341,6 @@ final class TodayViewModel: ObservableObject {
 
     private func monitoringFingerprint(for task: HabitTask) -> String {
         let selectionHash = task.appSelectionData?.base64EncodedString() ?? "none"
-        return "\(task.id.uuidString)|\(task.isEnabled)|\(task.usageThresholdSeconds)|\(selectionHash)"
+        return "\(task.id.uuidString)|\(task.isEnabled)|\(task.usageThresholdSeconds)|\(task.recurrence.rawValue)|\(selectionHash)"
     }
 }

@@ -405,6 +405,7 @@ final class CalendarViewModel: ObservableObject {
             let createdDay = calendar.startOfDay(for: task.createdAt)
             let hasRecordForDay = dayRecordByTaskID[task.id] != nil
             guard createdDay <= dayStart else { return false }
+            guard task.occurs(on: dayStart, calendar: calendar) || hasRecordForDay else { return false }
 
             if dayStart > todayStart {
                 return hasRecordForDay

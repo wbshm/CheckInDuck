@@ -6,6 +6,7 @@ final class CreateTaskViewModel: ObservableObject {
     @Published var taskName = ""
     @Published var deadlineHour = 21
     @Published var deadlineMinute = 0
+    @Published var recurrence: TaskRecurrence = .daily
     @Published var usageThresholdMinutes = 3
     @Published var selectedAppSelectionData: Data?
     @Published private(set) var editingTask: HabitTask?
@@ -30,6 +31,7 @@ final class CreateTaskViewModel: ObservableObject {
         taskName = ""
         deadlineHour = 21
         deadlineMinute = 0
+        recurrence = .daily
         usageThresholdMinutes = 3
         selectedAppSelectionData = nil
     }
@@ -39,6 +41,7 @@ final class CreateTaskViewModel: ObservableObject {
         taskName = task.name
         deadlineHour = task.deadline.hour
         deadlineMinute = task.deadline.minute
+        recurrence = task.recurrence
         usageThresholdMinutes = max(task.usageThresholdSeconds / 60, 1)
         selectedAppSelectionData = task.appSelectionData
     }
@@ -58,6 +61,7 @@ final class CreateTaskViewModel: ObservableObject {
                 name: trimmedName,
                 appSelectionData: selectedAppSelectionData,
                 deadline: deadline,
+                recurrence: recurrence,
                 usageThresholdSeconds: usageThresholdSeconds,
                 isEnabled: editingTask.isEnabled,
                 reminderConfig: editingTask.reminderConfig,
@@ -70,6 +74,7 @@ final class CreateTaskViewModel: ObservableObject {
             name: trimmedName,
             appSelectionData: selectedAppSelectionData,
             deadline: deadline,
+            recurrence: recurrence,
             usageThresholdSeconds: usageThresholdSeconds,
             reminderConfig: ReminderConfig(
                 isEnabled: AppPreferences.remindersEnabled(defaults: defaults),

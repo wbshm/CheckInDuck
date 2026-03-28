@@ -58,6 +58,7 @@
 "Privacy-first app usage habit tracker." = "注重隐私的应用使用习惯追踪器。";
 "Task" = "任务";
 "Task name" = "任务名称";
+"Repeat" = "重复";
 "Monitored Apps" = "监控应用";
 "Selected" = "已选择";
 "Choose Apps" = "选择应用";
@@ -143,8 +144,16 @@
 "common.none" = "无";
 "common.minutes.short" = "%d 分钟";
 "today.filter.all" = "全部";
+"No tasks scheduled for today." = "今天没有排到任务。";
 "No tasks match the selected filter." = "当前筛选条件下没有任务。";
 "create_task.selection.categories_websites" = "分类：%d，网站：%d";
+"task.recurrence.daily" = "每日";
+"task.recurrence.weekly" = "每周";
+"task.recurrence.monthly" = "每月";
+"task.recurrence.yearly" = "每年";
+"task.recurrence.summary.weekly" = "每周%@";
+"task.recurrence.summary.monthly" = "每月 %d 日";
+"task.recurrence.summary.yearly" = "每年 %@";
 "calendar.previous_month" = "上个月";
 "calendar.next_month" = "下个月";
 "calendar.restricted_day" = "受限日期";
