@@ -415,17 +415,17 @@ struct CalendarView: View {
                     Spacer(minLength: 8)
                 }
 
-                HStack(spacing: 8) {
+                WrappingHStack(horizontalSpacing: 8, verticalSpacing: 8) {
                     statusBadge(for: task.status)
                     detailMetaTag(
-                        text: viewModel.completionDetailText(
+                        text: viewModel.completionBadgeText(
                             for: task.completionSource,
                             completedAt: task.completedAt
-                        )
-                            ?? L10n.tr("history.source.not_completed"),
-                        systemImage: task.completionSource == .manual ? "hand.tap.fill" : task.completionSource == .appUsageThreshold ? "app.badge.checkmark" : "minus.circle"
+                        ) ?? L10n.tr("history.source.not_completed"),
+                        systemImage: task.completedAt == nil ? "minus.circle" : TaskTimeFormatter.completionSymbol(task.completionSource)
                     )
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -615,6 +615,7 @@ struct CalendarView: View {
     private func detailMetaTag(text: String, systemImage: String) -> some View {
         Label(text, systemImage: systemImage)
             .font(.caption)
+            .lineLimit(2)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
@@ -624,6 +625,7 @@ struct CalendarView: View {
                 Capsule()
                     .stroke(Color(uiColor: .separator).opacity(0.18), lineWidth: 1)
             )
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func monthlySubtitle(for insights: CalendarMonthInsights) -> String {

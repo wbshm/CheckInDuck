@@ -128,7 +128,8 @@ struct TodayView: View {
                     TodayTaskRow(
                         task: task,
                         status: viewModel.visibleStatus(for: task),
-                        completionDetail: viewModel.completionDetailText(for: task)
+                        completionTimeText: viewModel.completionTimeText(for: task),
+                        completionSymbol: viewModel.completionSymbol(for: task)
                     ) {
                         viewModel.markCompleted(taskID: task.id, source: .manual)
                     } onToggleEnabled: { isEnabled in
@@ -189,7 +190,8 @@ private struct SummaryChip: View {
 private struct TodayTaskRow: View {
     let task: HabitTask
     let status: DailyTaskStatus?
-    let completionDetail: String?
+    let completionTimeText: String?
+    let completionSymbol: String?
     let onComplete: () -> Void
     let onToggleEnabled: (Bool) -> Void
 
@@ -203,23 +205,31 @@ private struct TodayTaskRow: View {
             }
 
             HStack {
-                Text(L10n.format("today.deadline", task.deadline.displayText))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
+                WrappingHStack(horizontalSpacing: 8, verticalSpacing: 8) {
+                    metaTag(
+                        text: TaskTimeFormatter.deadlineBadgeText(task.deadline.displayText),
+                        systemImage: "clock",
+                        tint: .secondary
+                    )
+                    metaTag(
+                        text: TaskTimeFormatter.thresholdBadgeText(seconds: task.usageThresholdSeconds),
+                        systemImage: "timer",
+                        tint: .blue
+                    )
+                    if let completionTimeText, let completionSymbol {
+                        metaTag(
+                            text: completionTimeText,
+                            systemImage: completionSymbol,
+                            tint: .green
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer(minLength: 8)
                 Toggle("", isOn: enabledBinding)
                     .labelsHidden()
                     .tint(.blue)
-            }
-
-            Text(L10n.format("today.auto_check_in_threshold", max(task.usageThresholdSeconds, 1) / 60))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if let completionDetail {
-                Text(completionDetail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .fixedSize()
             }
 
             if task.isEnabled, status != .completed {
@@ -248,6 +258,24 @@ private struct TodayTaskRow: View {
             .background(statusColor.opacity(0.15))
             .foregroundStyle(statusColor)
             .clipShape(Capsule())
+    }
+
+    private func metaTag(text: String, systemImage: String, tint: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+            Text(text)
+                .font(.caption.weight(.medium))
+                .monospacedDigit()
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(tint.opacity(0.10))
+        .clipShape(Capsule())
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var statusColor: Color {

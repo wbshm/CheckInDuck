@@ -283,27 +283,19 @@ final class CalendarViewModel: ObservableObject {
     }
 
     func completionSourceText(for source: CompletionSource?) -> String? {
-        switch source {
-        case .manual:
-            return L10n.tr("history.source.manual")
-        case .appUsageThreshold:
-            return L10n.tr("history.source.app_usage")
-        case nil:
-            return nil
-        }
+        TaskTimeFormatter.completionSourceText(source)
     }
 
     func completionDetailText(for source: CompletionSource?, completedAt: Date?) -> String? {
-        let sourceText = completionSourceText(for: source)
-        guard let completedAt else {
-            return sourceText
-        }
+        TaskTimeFormatter.completionDetailText(source: source, completedAt: completedAt)
+    }
 
-        let timeText = completedAt.formatted(date: .omitted, time: .shortened)
-        if let sourceText {
-            return L10n.format("history.source_with_time", sourceText, timeText)
-        }
-        return timeText
+    func completionTimeText(for completedAt: Date?) -> String? {
+        TaskTimeFormatter.completionBadgeText(source: nil, completedAt: completedAt)
+    }
+
+    func completionBadgeText(for source: CompletionSource?, completedAt: Date?) -> String? {
+        TaskTimeFormatter.completionBadgeText(source: source, completedAt: completedAt)
     }
 
     var monthInsights: CalendarMonthInsights {

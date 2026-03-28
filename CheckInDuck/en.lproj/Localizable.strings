@@ -19,7 +19,7 @@
 "Edit" = "Edit";
 "Disable" = "Disable";
 "Enable" = "Enable";
-"Mark Completed" = "Mark Completed";
+"Mark Completed" = "Manual Check-In";
 "View" = "View";
 "Display" = "Display";
 "Task Filter" = "Task Filter";
@@ -117,6 +117,7 @@
 "upgrade.entry.reminder_customization.message" = "Upgrade to choose your own reminder lead time.";
 "today.alert.task_limit.message" = "Free tier supports up to %d task(s). Upgrade to Premium for unlimited tasks.";
 "today.deadline" = "Deadline: %@";
+"today.deadline_today" = "Due today at %@";
 "today.auto_check_in_threshold" = "Auto check-in threshold: %d min";
 "today.status.disabled" = "Disabled";
 "history.display.by_day" = "By Day";
@@ -128,7 +129,15 @@
 "history.source.app_usage" = "App Usage";
 "history.source.not_completed" = "Not Completed";
 "history.source_with_time" = "%1$@ · %2$@";
+"history.source.manual_with_time" = "Completed manually at %@";
+"history.source.app_usage_with_time" = "Auto-completed at %@";
+"history.source.completed_with_time" = "Completed at %@";
 "history.row_subtitle" = "%1$@ • %2$@";
+"time.deadline_short" = "Due %@";
+"time.threshold_short" = "Limit %@";
+"time.completion_manual_short" = "Manual %@";
+"time.completion_auto_short" = "Auto %@";
+"time.completion_short" = "Done %@";
 "settings.reminders.default_lead_time" = "Default Reminder Lead Time: %d min";
 "settings.plan.free_history_window_value" = "%d days";
 "settings.plan.last_synced" = "Last synced: %@";

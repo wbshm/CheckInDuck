@@ -19,7 +19,7 @@
 "Edit" = "编辑";
 "Disable" = "停用";
 "Enable" = "启用";
-"Mark Completed" = "标记完成";
+"Mark Completed" = "手动打卡";
 "View" = "视图";
 "Display" = "显示方式";
 "Task Filter" = "任务筛选";
@@ -117,6 +117,7 @@
 "upgrade.entry.reminder_customization.message" = "升级后可选择你自己的提醒提前时间。";
 "today.alert.task_limit.message" = "免费版最多支持 %d 个任务。升级到 Premium 后可使用无限任务。";
 "today.deadline" = "截止时间：%@";
+"today.deadline_today" = "今天 %@ 截止";
 "today.auto_check_in_threshold" = "自动打卡阈值：%d 分钟";
 "today.status.disabled" = "已关闭";
 "history.display.by_day" = "按日期";
@@ -128,7 +129,15 @@
 "history.source.app_usage" = "应用使用";
 "history.source.not_completed" = "未完成";
 "history.source_with_time" = "%1$@ · %2$@";
+"history.source.manual_with_time" = "手动完成于 %@";
+"history.source.app_usage_with_time" = "自动完成于 %@";
+"history.source.completed_with_time" = "完成于 %@";
 "history.row_subtitle" = "%1$@ • %2$@";
+"time.deadline_short" = "截止 %@";
+"time.threshold_short" = "阈值 %@";
+"time.completion_manual_short" = "手动 %@";
+"time.completion_auto_short" = "自动 %@";
+"time.completion_short" = "完成 %@";
 "settings.reminders.default_lead_time" = "默认提醒提前时间：%d 分钟";
 "settings.plan.free_history_window_value" = "%d 天";
 "settings.plan.last_synced" = "上次同步：%@";

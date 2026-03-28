@@ -160,13 +160,22 @@ final class HistoryViewModel: ObservableObject {
     }
 
     func completionDetailText(for record: DailyRecord) -> String {
-        let sourceText = completionSourceText(for: record)
-        guard let completedAt = record.completedAt else {
-            return sourceText
-        }
+        TaskTimeFormatter.completionDetailText(
+            source: record.completionSource,
+            completedAt: record.completedAt
+        ) ?? completionSourceText(for: record)
+    }
 
-        let timeText = completedAt.formatted(date: .omitted, time: .shortened)
-        return L10n.format("history.source_with_time", sourceText, timeText)
+    func completionTimeText(for record: DailyRecord) -> String? {
+        TaskTimeFormatter.completionBadgeText(
+            source: record.completionSource,
+            completedAt: record.completedAt
+        )
+    }
+
+    func completionSymbol(for record: DailyRecord) -> String? {
+        guard record.completedAt != nil else { return nil }
+        return TaskTimeFormatter.completionSymbol(record.completionSource)
     }
 
     private func recordSort(_ lhs: DailyRecord, _ rhs: DailyRecord) -> Bool {

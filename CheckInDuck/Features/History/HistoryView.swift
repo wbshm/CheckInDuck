@@ -101,8 +101,7 @@ struct HistoryView: View {
                     ForEach(section.records) { record in
                         historyRow(
                             title: viewModel.taskName(for: record.taskId),
-                            subtitle: rowSubtitle(for: record),
-                            status: record.status
+                            record: record
                         )
                     }
                 }
@@ -113,8 +112,7 @@ struct HistoryView: View {
                     ForEach(section.records) { record in
                         historyRow(
                             title: record.date.formatted(date: .abbreviated, time: .omitted),
-                            subtitle: rowSubtitle(for: record),
-                            status: record.status
+                            record: record
                         )
                     }
                 }
@@ -136,26 +134,54 @@ struct HistoryView: View {
         }
     }
 
-    private func rowSubtitle(for record: DailyRecord) -> String {
-        let completionText = viewModel.completionDetailText(for: record)
-        return L10n.format("history.row_subtitle", record.status.localizedTitle, completionText)
-    }
-
-    private func historyRow(title: String, subtitle: String, status: DailyTaskStatus) -> some View {
+    private func historyRow(title: String, record: DailyRecord) -> some View {
         HStack(spacing: 12) {
             Circle()
-                .fill(statusColor(status).opacity(0.2))
+                .fill(statusColor(record.status).opacity(0.2))
                 .frame(width: 10, height: 10)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                WrappingHStack(horizontalSpacing: 8, verticalSpacing: 8) {
+                    statusTag(record.status)
+                    if let timeText = viewModel.completionTimeText(for: record),
+                       let symbol = viewModel.completionSymbol(for: record) {
+                        metaTag(text: timeText, systemImage: symbol)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.vertical, 2)
+    }
+
+    private func statusTag(_ status: DailyTaskStatus) -> some View {
+        Text(status.localizedTitle)
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(statusColor(status).opacity(0.14))
+            .foregroundStyle(statusColor(status))
+            .clipShape(Capsule())
+    }
+
+    private func metaTag(text: String, systemImage: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+            Text(text)
+                .font(.caption.weight(.medium))
+                .monospacedDigit()
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(Capsule())
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func statusColor(_ status: DailyTaskStatus) -> Color {

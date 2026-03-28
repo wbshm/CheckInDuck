@@ -210,10 +210,27 @@ final class TodayViewModel: ObservableObject {
         guard let todayRecord = todayRecord(for: task.id, on: nowProvider()) else {
             return nil
         }
-        return completionDetailText(
+        return TaskTimeFormatter.completionDetailText(
             source: todayRecord.completionSource,
             completedAt: todayRecord.completedAt
         )
+    }
+
+    func completionTimeText(for task: HabitTask) -> String? {
+        guard let todayRecord = todayRecord(for: task.id, on: nowProvider()) else {
+            return nil
+        }
+        return TaskTimeFormatter.completionBadgeText(
+            source: todayRecord.completionSource,
+            completedAt: todayRecord.completedAt
+        )
+    }
+
+    func completionSymbol(for task: HabitTask) -> String? {
+        guard let todayRecord = todayRecord(for: task.id, on: nowProvider()) else {
+            return nil
+        }
+        return TaskTimeFormatter.completionSymbol(todayRecord.completionSource)
     }
 
     var completedCount: Int {
@@ -280,17 +297,7 @@ final class TodayViewModel: ObservableObject {
     }
 
     private func completionDetailText(source: CompletionSource?, completedAt: Date?) -> String? {
-        guard let completedAt else { return nil }
-        let timeText = completedAt.formatted(date: .omitted, time: .shortened)
-
-        switch source {
-        case .manual:
-            return L10n.format("history.source_with_time", L10n.tr("history.source.manual"), timeText)
-        case .appUsageThreshold:
-            return L10n.format("history.source_with_time", L10n.tr("history.source.app_usage"), timeText)
-        case nil:
-            return timeText
-        }
+        TaskTimeFormatter.completionDetailText(source: source, completedAt: completedAt)
     }
 
     private func scheduleRemindersIfNeeded(for task: HabitTask) {
