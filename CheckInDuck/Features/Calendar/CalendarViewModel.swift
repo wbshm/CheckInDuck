@@ -52,6 +52,7 @@ struct CalendarDayTaskDetail: Identifiable, Equatable {
     let taskName: String
     let status: DailyTaskStatus
     let completionSource: CompletionSource?
+    let completedAt: Date?
 }
 
 struct CalendarDayDetail: Equatable {
@@ -292,6 +293,19 @@ final class CalendarViewModel: ObservableObject {
         }
     }
 
+    func completionDetailText(for source: CompletionSource?, completedAt: Date?) -> String? {
+        let sourceText = completionSourceText(for: source)
+        guard let completedAt else {
+            return sourceText
+        }
+
+        let timeText = completedAt.formatted(date: .omitted, time: .shortened)
+        if let sourceText {
+            return L10n.format("history.source_with_time", sourceText, timeText)
+        }
+        return timeText
+    }
+
     var monthInsights: CalendarMonthInsights {
         let summaries = summariesForMonth(monthAnchor).filter { !$0.isRestricted }
         let dayCount = summaries.count
@@ -449,7 +463,8 @@ final class CalendarViewModel: ObservableObject {
                     taskID: task.id,
                     taskName: task.name,
                     status: status,
-                    completionSource: record?.completionSource
+                    completionSource: record?.completionSource,
+                    completedAt: record?.completedAt
                 )
             )
         }
@@ -463,7 +478,8 @@ final class CalendarViewModel: ObservableObject {
                     taskID: record.taskId,
                     taskName: L10n.tr("history.unknown_task"),
                     status: record.status,
-                    completionSource: record.completionSource
+                    completionSource: record.completionSource,
+                    completedAt: record.completedAt
                 )
             )
         }

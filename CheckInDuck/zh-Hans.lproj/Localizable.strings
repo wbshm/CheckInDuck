@@ -118,6 +118,7 @@
 "today.alert.task_limit.message" = "免费版最多支持 %d 个任务。升级到 Premium 后可使用无限任务。";
 "today.deadline" = "截止时间：%@";
 "today.auto_check_in_threshold" = "自动打卡阈值：%d 分钟";
+"today.status.disabled" = "已关闭";
 "history.display.by_day" = "按日期";
 "history.display.by_task" = "按任务";
 "history.all_tasks" = "全部任务";
@@ -126,6 +127,7 @@
 "history.source.manual" = "手动";
 "history.source.app_usage" = "应用使用";
 "history.source.not_completed" = "未完成";
+"history.source_with_time" = "%1$@ · %2$@";
 "history.row_subtitle" = "%1$@ • %2$@";
 "settings.reminders.default_lead_time" = "默认提醒提前时间：%d 分钟";
 "settings.plan.free_history_window_value" = "%d 天";

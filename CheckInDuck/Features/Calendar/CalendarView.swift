@@ -418,7 +418,10 @@ struct CalendarView: View {
                 HStack(spacing: 8) {
                     statusBadge(for: task.status)
                     detailMetaTag(
-                        text: viewModel.completionSourceText(for: task.completionSource)
+                        text: viewModel.completionDetailText(
+                            for: task.completionSource,
+                            completedAt: task.completedAt
+                        )
                             ?? L10n.tr("history.source.not_completed"),
                         systemImage: task.completionSource == .manual ? "hand.tap.fill" : task.completionSource == .appUsageThreshold ? "app.badge.checkmark" : "minus.circle"
                     )

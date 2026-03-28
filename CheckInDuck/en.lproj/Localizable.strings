@@ -118,6 +118,7 @@
 "today.alert.task_limit.message" = "Free tier supports up to %d task(s). Upgrade to Premium for unlimited tasks.";
 "today.deadline" = "Deadline: %@";
 "today.auto_check_in_threshold" = "Auto check-in threshold: %d min";
+"today.status.disabled" = "Disabled";
 "history.display.by_day" = "By Day";
 "history.display.by_task" = "By Task";
 "history.all_tasks" = "All Tasks";
@@ -126,6 +127,7 @@
 "history.source.manual" = "Manual";
 "history.source.app_usage" = "App Usage";
 "history.source.not_completed" = "Not Completed";
+"history.source_with_time" = "%1$@ · %2$@";
 "history.row_subtitle" = "%1$@ • %2$@";
 "settings.reminders.default_lead_time" = "Default Reminder Lead Time: %d min";
 "settings.plan.free_history_window_value" = "%d days";

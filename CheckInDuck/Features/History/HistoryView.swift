@@ -137,8 +137,8 @@ struct HistoryView: View {
     }
 
     private func rowSubtitle(for record: DailyRecord) -> String {
-        let sourceText = viewModel.completionSourceText(for: record)
-        return L10n.format("history.row_subtitle", record.status.localizedTitle, sourceText)
+        let completionText = viewModel.completionDetailText(for: record)
+        return L10n.format("history.row_subtitle", record.status.localizedTitle, completionText)
     }
 
     private func historyRow(title: String, subtitle: String, status: DailyTaskStatus) -> some View {

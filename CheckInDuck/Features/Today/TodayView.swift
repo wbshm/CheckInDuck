@@ -125,7 +125,11 @@ struct TodayView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(viewModel.displayedTasks) { task in
-                    TodayTaskRow(task: task, status: viewModel.status(for: task)) {
+                    TodayTaskRow(
+                        task: task,
+                        status: viewModel.visibleStatus(for: task),
+                        completionDetail: viewModel.completionDetailText(for: task)
+                    ) {
                         viewModel.markCompleted(taskID: task.id, source: .manual)
                     } onToggleEnabled: { isEnabled in
                         viewModel.setEnabled(task: task, isEnabled: isEnabled)
@@ -184,7 +188,8 @@ private struct SummaryChip: View {
 
 private struct TodayTaskRow: View {
     let task: HabitTask
-    let status: DailyTaskStatus
+    let status: DailyTaskStatus?
+    let completionDetail: String?
     let onComplete: () -> Void
     let onToggleEnabled: (Bool) -> Void
 
@@ -211,7 +216,13 @@ private struct TodayTaskRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            if status != .completed {
+            if let completionDetail {
+                Text(completionDetail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if task.isEnabled, status != .completed {
                 Button("Mark Completed", action: onComplete)
                     .buttonStyle(.borderedProminent)
             }
@@ -230,7 +241,7 @@ private struct TodayTaskRow: View {
     }
 
     private var statusTag: some View {
-        Text(status.localizedTitle)
+        Text(statusTitle)
             .font(.caption)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -241,6 +252,8 @@ private struct TodayTaskRow: View {
 
     private var statusColor: Color {
         switch status {
+        case nil:
+            return .secondary
         case .pending:
             return .orange
         case .completed:
@@ -248,6 +261,10 @@ private struct TodayTaskRow: View {
         case .missed:
             return .red
         }
+    }
+
+    private var statusTitle: String {
+        status?.localizedTitle ?? L10n.tr("today.status.disabled")
     }
 }
 

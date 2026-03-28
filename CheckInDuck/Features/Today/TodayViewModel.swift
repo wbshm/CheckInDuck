@@ -143,9 +143,9 @@ final class TodayViewModel: ObservableObject {
     }
 
     func markCompleted(taskID: UUID, source: CompletionSource) {
-        let now = Date()
+        let now = nowProvider()
         let today = calendar.startOfDay(for: now)
-        if var existing = todayRecord(for: taskID) {
+        if var existing = todayRecord(for: taskID, on: now) {
             existing.status = .completed
             existing.completionSource = source
             existing.completedAt = now
@@ -189,20 +189,43 @@ final class TodayViewModel: ObservableObject {
         statusCalculator.status(for: task, records: records, now: nowProvider())
     }
 
+    func visibleStatus(for task: HabitTask) -> DailyTaskStatus? {
+        if let todayRecord = todayRecord(for: task.id, on: nowProvider()) {
+            return todayRecord.status
+        }
+        guard task.isEnabled else {
+            return nil
+        }
+        guard task.occurs(on: nowProvider(), calendar: calendar) else {
+            return nil
+        }
+        return status(for: task)
+    }
+
     func deadlineText(for task: HabitTask) -> String {
         task.deadline.displayText
     }
 
+    func completionDetailText(for task: HabitTask) -> String? {
+        guard let todayRecord = todayRecord(for: task.id, on: nowProvider()) else {
+            return nil
+        }
+        return completionDetailText(
+            source: todayRecord.completionSource,
+            completedAt: todayRecord.completedAt
+        )
+    }
+
     var completedCount: Int {
-        scheduledTasks.filter { status(for: $0) == .completed }.count
+        scheduledTasks.filter { visibleStatus(for: $0) == .completed }.count
     }
 
     var missedCount: Int {
-        scheduledTasks.filter { status(for: $0) == .missed }.count
+        scheduledTasks.filter { visibleStatus(for: $0) == .missed }.count
     }
 
     var pendingCount: Int {
-        scheduledTasks.filter { status(for: $0) == .pending }.count
+        scheduledTasks.filter { visibleStatus(for: $0) == .pending }.count
     }
 
     var scheduledTasks: [HabitTask] {
@@ -212,7 +235,7 @@ final class TodayViewModel: ObservableObject {
     var displayedTasks: [HabitTask] {
         orderedTasks(scheduledTasks).filter { task in
             guard let selectedStatus = selectedFilter.status else { return true }
-            return status(for: task) == selectedStatus
+            return visibleStatus(for: task) == selectedStatus
         }
     }
 
@@ -222,8 +245,8 @@ final class TodayViewModel: ObservableObject {
 
     private func orderedTasks(_ tasks: [HabitTask]) -> [HabitTask] {
         tasks.sorted { lhs, rhs in
-            let lhsStatus = status(for: lhs)
-            let rhsStatus = status(for: rhs)
+            let lhsStatus = visibleStatus(for: lhs)
+            let rhsStatus = visibleStatus(for: rhs)
 
             let lhsPriority = sortPriority(for: lhsStatus)
             let rhsPriority = sortPriority(for: rhsStatus)
@@ -243,14 +266,30 @@ final class TodayViewModel: ObservableObject {
         }
     }
 
-    private func sortPriority(for status: DailyTaskStatus) -> Int {
+    private func sortPriority(for status: DailyTaskStatus?) -> Int {
         switch status {
+        case nil:
+            return 3
         case .missed:
             return 0
         case .pending:
             return 1
         case .completed:
             return 2
+        }
+    }
+
+    private func completionDetailText(source: CompletionSource?, completedAt: Date?) -> String? {
+        guard let completedAt else { return nil }
+        let timeText = completedAt.formatted(date: .omitted, time: .shortened)
+
+        switch source {
+        case .manual:
+            return L10n.format("history.source_with_time", L10n.tr("history.source.manual"), timeText)
+        case .appUsageThreshold:
+            return L10n.format("history.source_with_time", L10n.tr("history.source.app_usage"), timeText)
+        case nil:
+            return timeText
         }
     }
 

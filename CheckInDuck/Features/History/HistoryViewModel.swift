@@ -159,6 +159,16 @@ final class HistoryViewModel: ObservableObject {
         }
     }
 
+    func completionDetailText(for record: DailyRecord) -> String {
+        let sourceText = completionSourceText(for: record)
+        guard let completedAt = record.completedAt else {
+            return sourceText
+        }
+
+        let timeText = completedAt.formatted(date: .omitted, time: .shortened)
+        return L10n.format("history.source_with_time", sourceText, timeText)
+    }
+
     private func recordSort(_ lhs: DailyRecord, _ rhs: DailyRecord) -> Bool {
         if lhs.date != rhs.date {
             return lhs.date > rhs.date

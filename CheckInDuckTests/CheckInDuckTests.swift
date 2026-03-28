@@ -103,6 +103,54 @@ struct CheckInDuckTests {
 
     @MainActor
     @Test
+    func disabledTaskDoesNotCountAsPendingAndCancelsReminderAndMonitoring() async throws {
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let monitoring = MockAppUsageMonitoring()
+        let reminder = TrackingReminderScheduling()
+        let completionEvents = StubAppUsageCompletionEvents()
+
+        let task = HabitTask(
+            id: UUID(uuidString: "EEEEEEEE-1111-2222-3333-444444444444")!,
+            name: "Disabled",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 23, minute: 0),
+            usageThresholdSeconds: 60,
+            isEnabled: true
+        )
+        taskStore.add(task)
+
+        let viewModel = TodayViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: .current,
+            reminderScheduling: reminder,
+            appUsageMonitoring: monitoring,
+            appUsageCompletionEvents: completionEvents
+        )
+
+        let started = await waitUntil {
+            let startCount = await monitoring.startCount(for: task.id)
+            let scheduleCount = await reminder.scheduleCount(for: task.id)
+            return startCount == 1 && scheduleCount == 1
+        }
+        #expect(started)
+
+        viewModel.setEnabled(task: task, isEnabled: false)
+
+        let disabledApplied = await waitUntil {
+            let stopCount = await monitoring.stopCount(for: task.id)
+            let cancelCount = await reminder.cancelCount(for: task.id)
+            return stopCount == 1 && cancelCount == 1
+        }
+        #expect(disabledApplied)
+        #expect(viewModel.pendingCount == 0)
+        #expect(viewModel.visibleStatus(for: taskStore.findByID(task.id)!) == nil)
+    }
+
+    @MainActor
+    @Test
     func thresholdEventIncludesPastActivityOnSupportedIOS() async throws {
         let event = AppUsageMonitoringService.makeThresholdEvent(
             selection: FamilyActivitySelection(),
@@ -520,6 +568,53 @@ struct CheckInDuckTests {
 
     @MainActor
     @Test
+    func todayCompletionDetailTextIncludesSourceAndMinute() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let now = Date(timeIntervalSince1970: 1_772_000_000)
+
+        let defaults = InMemoryKeyValueStore()
+        let taskStore = TaskStore(defaults: defaults)
+        let recordStore = DailyRecordStore(defaults: defaults)
+        let monitoring = MockAppUsageMonitoring()
+        let reminder = NoopReminderScheduling()
+        let completionEvents = StubAppUsageCompletionEvents()
+        let task = HabitTask(
+            name: "Read",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 23, minute: 0),
+            isEnabled: true,
+            createdAt: now,
+            updatedAt: now
+        )
+        taskStore.add(task)
+        recordStore.add(
+            DailyRecord(
+                taskId: task.id,
+                date: calendar.startOfDay(for: now),
+                status: .completed,
+                completionSource: .manual,
+                completedAt: now
+            )
+        )
+
+        let viewModel = TodayViewModel(
+            taskStore: taskStore,
+            dailyRecordStore: recordStore,
+            calendar: calendar,
+            reminderScheduling: reminder,
+            appUsageMonitoring: monitoring,
+            appUsageCompletionEvents: completionEvents,
+            nowProvider: { now }
+        )
+
+        let detailText = viewModel.completionDetailText(for: task)
+        #expect(detailText?.contains(L10n.tr("history.source.manual")) == true)
+        #expect(detailText?.contains(now.formatted(date: .omitted, time: .shortened)) == true)
+    }
+
+    @MainActor
+    @Test
     func calendarSummaryForTodayShowsMixedStatusesWithPriority() async throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
@@ -889,13 +984,22 @@ private final class InMemoryKeyValueStore: KeyValueStoring {
 private final class MockAppUsageMonitoring: AppUsageMonitoring {
     private actor State {
         var startedTaskIDs: [UUID] = []
+        var stoppedTaskIDs: [UUID] = []
 
         func recordStart(_ taskID: UUID) {
             startedTaskIDs.append(taskID)
         }
 
+        func recordStop(_ taskID: UUID) {
+            stoppedTaskIDs.append(taskID)
+        }
+
         func startCount(for taskID: UUID) -> Int {
             startedTaskIDs.filter { $0 == taskID }.count
+        }
+
+        func stopCount(for taskID: UUID) -> Int {
+            stoppedTaskIDs.filter { $0 == taskID }.count
         }
     }
 
@@ -905,10 +1009,16 @@ private final class MockAppUsageMonitoring: AppUsageMonitoring {
         await state.recordStart(task.id)
     }
 
-    func stopMonitoring(taskID: UUID) async {}
+    func stopMonitoring(taskID: UUID) async {
+        await state.recordStop(taskID)
+    }
 
     func startCount(for taskID: UUID) async -> Int {
         await state.startCount(for: taskID)
+    }
+
+    func stopCount(for taskID: UUID) async -> Int {
+        await state.stopCount(for: taskID)
     }
 }
 
@@ -920,13 +1030,22 @@ private struct NoopReminderScheduling: ReminderScheduling {
 private final class TrackingReminderScheduling: ReminderScheduling {
     private actor State {
         var scheduledTaskIDs: [UUID] = []
+        var canceledTaskIDs: [UUID] = []
 
         func recordSchedule(_ taskID: UUID) {
             scheduledTaskIDs.append(taskID)
         }
 
+        func recordCancel(_ taskID: UUID) {
+            canceledTaskIDs.append(taskID)
+        }
+
         func scheduleCount(for taskID: UUID) -> Int {
             scheduledTaskIDs.filter { $0 == taskID }.count
+        }
+
+        func cancelCount(for taskID: UUID) -> Int {
+            canceledTaskIDs.filter { $0 == taskID }.count
         }
     }
 
@@ -936,10 +1055,16 @@ private final class TrackingReminderScheduling: ReminderScheduling {
         await state.recordSchedule(task.id)
     }
 
-    func cancelReminders(for taskID: UUID) async {}
+    func cancelReminders(for taskID: UUID) async {
+        await state.recordCancel(taskID)
+    }
 
     func scheduleCount(for taskID: UUID) async -> Int {
         await state.scheduleCount(for: taskID)
+    }
+
+    func cancelCount(for taskID: UUID) async -> Int {
+        await state.cancelCount(for: taskID)
     }
 }
 
