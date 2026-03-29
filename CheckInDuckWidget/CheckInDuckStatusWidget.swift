@@ -123,7 +123,7 @@ private struct CheckInDuckStatusWidgetEntryView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Today")
+                    Text(WidgetL10n.tr("widget.title.today"))
                         .font(.system(.title3, design: .rounded).weight(.semibold))
                         .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.18))
 
@@ -147,9 +147,10 @@ private struct CheckInDuckStatusWidgetEntryView: View {
             }
 
             HStack(spacing: 8) {
-                StatusPill(label: "Pending", count: entry.snapshot.pendingCount, color: .pending)
-                StatusPill(label: "Done", count: entry.snapshot.completedCount, color: .completed)
-                StatusPill(label: "Missed", count: entry.snapshot.missedCount, color: .missed)
+                StatusPill(label: WidgetL10n.tr("widget.status.pending"), count: entry.snapshot.pendingCount, color: .pending)
+                StatusPill(label: WidgetL10n.tr("widget.status.done"), count: entry.snapshot.completedCount, color: .completed)
+                StatusPill(label: WidgetL10n.tr("widget.status.missed"), count: entry.snapshot.missedCount, color: .missed)
+                StatusPill(label: WidgetL10n.tr("widget.status.later"), count: entry.snapshot.notTodayCount, color: .later)
             }
         }
     }
@@ -244,22 +245,26 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     }
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: family == .systemSmall ? 14 : 10) {
-            // HStack(spacing: 10) {
-            //     Image(systemName: "checklist")
-            //         .font(.system(size: family == .systemSmall ? 20 : 16, weight: .semibold))
-            //         .foregroundStyle(family == .systemSmall ? Color(red: 0.12, green: 0.60, blue: 0.93) : Color(red: 0.19, green: 0.53, blue: 0.38))
-            //         .frame(width: 32, height: 32)
+        VStack(alignment: .leading, spacing: family == .systemSmall ? 10 : 8) {
+            Image(systemName: entry.snapshot.notTodayCount > 0 ? "calendar.badge.clock" : "checkmark.circle")
+                .font(.system(size: family == .systemSmall ? 18 : 16, weight: .semibold))
+                .foregroundStyle(accentTextColor)
 
-            //     Text("No active tasks")
-            //         .font(.system(family == .systemSmall ? .subheadline : .headline, design: .rounded).weight(.semibold))
-            //         .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.19))
-            // }
+            Text(WidgetL10n.tr("widget.empty.today"))
+                .font(.system(family == .systemSmall ? .subheadline : .headline, design: .rounded).weight(.semibold))
+                .foregroundStyle(primaryTextColor)
 
-            // Text(family == .systemSmall ? "Add or enable a task to show today's progress." : "Add or enable a task in CheckInDuck to see today's progress here.")
-            //     .font(.system(family == .systemSmall ? .caption2 : .caption, design: .rounded))
-            //     .foregroundStyle(Color(red: 0.39, green: 0.44, blue: 0.51))
-            //     .lineLimit(family == .systemSmall ? 2 : 3)
+            if entry.snapshot.notTodayCount > 0 {
+                Text(WidgetL10n.format("widget.empty.later", entry.snapshot.notTodayCount))
+                    .font(.system(family == .systemSmall ? .caption2 : .caption, design: .rounded))
+                    .foregroundStyle(secondaryTextColor)
+                    .lineLimit(family == .systemSmall ? 2 : 3)
+            } else {
+                Text(WidgetL10n.tr("widget.empty.none"))
+                    .font(.system(family == .systemSmall ? .caption2 : .caption, design: .rounded))
+                    .foregroundStyle(secondaryTextColor)
+                    .lineLimit(family == .systemSmall ? 2 : 3)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -295,14 +300,24 @@ private struct CheckInDuckStatusWidgetEntryView: View {
 
     private var summaryText: String {
         if entry.snapshot.tasks.isEmpty {
-            return "Nothing scheduled"
+            return entry.snapshot.notTodayCount > 0
+                ? WidgetL10n.format("widget.summary.later", entry.snapshot.notTodayCount)
+                : WidgetL10n.tr("widget.summary.clear")
         }
 
         if entry.snapshot.missedCount > 0 {
-            return "\(entry.snapshot.pendingCount) pending, \(entry.snapshot.missedCount) missed"
+            return WidgetL10n.format(
+                "widget.summary.pending_missed",
+                entry.snapshot.pendingCount,
+                entry.snapshot.missedCount
+            )
         }
 
-        return "\(entry.snapshot.pendingCount) pending, \(entry.snapshot.completedCount) done"
+        return WidgetL10n.format(
+            "widget.summary.pending_done",
+            entry.snapshot.pendingCount,
+            entry.snapshot.completedCount
+        )
     }
 
     private var smallListTasks: [WidgetTaskStatusSnapshot] {
@@ -326,6 +341,10 @@ private struct CheckInDuckStatusWidgetEntryView: View {
 
         if entry.snapshot.pendingCount > 0 {
             return WidgetL10n.format("widget.overview.pending", entry.snapshot.pendingCount)
+        }
+
+        if entry.snapshot.notTodayCount > 0 {
+            return WidgetL10n.format("widget.overview.later", entry.snapshot.notTodayCount)
         }
 
         return WidgetL10n.format("widget.overview.done", entry.snapshot.completedCount)
@@ -567,6 +586,7 @@ private struct WidgetStatusColor {
     static let pending = WidgetStatusColor(fill: Color(red: 0.95, green: 0.62, blue: 0.16))
     static let completed = WidgetStatusColor(fill: Color(red: 0.20, green: 0.69, blue: 0.45))
     static let missed = WidgetStatusColor(fill: Color(red: 0.88, green: 0.34, blue: 0.28))
+    static let later = WidgetStatusColor(fill: Color(red: 0.42, green: 0.50, blue: 0.68))
 
     init(status: WidgetTaskStatus) {
         switch status {
@@ -629,8 +649,9 @@ private struct WidgetSnapshotBuilder {
         records: [WidgetDailyRecord],
         now: Date
     ) -> WidgetTodaySnapshot {
-        let snapshots = tasks
-            .filter(\.isEnabled)
+        let enabledTasks = tasks.filter(\.isEnabled)
+        let todaySnapshots = enabledTasks
+            .filter { $0.occurs(on: now, calendar: calendar) }
             .map { task in
                 WidgetTaskStatusSnapshot(
                     id: task.id,
@@ -642,10 +663,11 @@ private struct WidgetSnapshotBuilder {
             .sorted(by: sortSnapshots)
 
         return WidgetTodaySnapshot(
-            pendingCount: snapshots.filter { $0.status == .pending }.count,
-            completedCount: snapshots.filter { $0.status == .completed }.count,
-            missedCount: snapshots.filter { $0.status == .missed }.count,
-            tasks: snapshots
+            pendingCount: todaySnapshots.filter { $0.status == .pending }.count,
+            completedCount: todaySnapshots.filter { $0.status == .completed }.count,
+            missedCount: todaySnapshots.filter { $0.status == .missed }.count,
+            notTodayCount: enabledTasks.filter { !$0.occurs(on: now, calendar: calendar) }.count,
+            tasks: todaySnapshots
         )
     }
 
@@ -704,12 +726,14 @@ private struct WidgetTodaySnapshot {
     let pendingCount: Int
     let completedCount: Int
     let missedCount: Int
+    let notTodayCount: Int
     let tasks: [WidgetTaskStatusSnapshot]
 
     static let placeholder = WidgetTodaySnapshot(
         pendingCount: 1,
         completedCount: 1,
         missedCount: 0,
+        notTodayCount: 1,
         tasks: [
             WidgetTaskStatusSnapshot(
                 id: UUID(),
@@ -744,7 +768,66 @@ private struct WidgetHabitTask: Identifiable, Decodable {
     let id: UUID
     let name: String
     let deadline: WidgetDailyDeadline
+    let recurrence: WidgetTaskRecurrence
+    let recurrenceAnchorDate: Date?
     let isEnabled: Bool
+    let createdAt: Date
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case deadline
+        case recurrence
+        case recurrenceAnchorDate
+        case isEnabled
+        case createdAt
+    }
+
+    var effectiveRecurrenceStartDate: Date {
+        recurrenceAnchorDate ?? createdAt
+    }
+
+    func occurs(on date: Date, calendar: Calendar) -> Bool {
+        recurrence.occurs(on: date, startDate: effectiveRecurrenceStartDate, calendar: calendar)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        deadline = try container.decode(WidgetDailyDeadline.self, forKey: .deadline)
+        recurrence = try container.decodeIfPresent(WidgetTaskRecurrence.self, forKey: .recurrence) ?? .daily
+        recurrenceAnchorDate = try container.decodeIfPresent(Date.self, forKey: .recurrenceAnchorDate)
+        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+    }
+}
+
+private enum WidgetTaskRecurrence: String, Decodable {
+    case daily
+    case weekly
+    case monthly
+    case yearly
+
+    func occurs(on date: Date, startDate: Date, calendar: Calendar) -> Bool {
+        let targetDay = calendar.startOfDay(for: date)
+        let anchorDay = calendar.startOfDay(for: startDate)
+        guard targetDay >= anchorDay else { return false }
+
+        switch self {
+        case .daily:
+            return true
+        case .weekly:
+            return calendar.component(.weekday, from: targetDay) == calendar.component(.weekday, from: anchorDay)
+        case .monthly:
+            return calendar.component(.day, from: targetDay) == calendar.component(.day, from: anchorDay)
+        case .yearly:
+            let targetComponents = calendar.dateComponents([.month, .day], from: targetDay)
+            let anchorComponents = calendar.dateComponents([.month, .day], from: anchorDay)
+            return targetComponents.month == anchorComponents.month &&
+                targetComponents.day == anchorComponents.day
+        }
+    }
 }
 
 private struct WidgetDailyDeadline: Decodable {

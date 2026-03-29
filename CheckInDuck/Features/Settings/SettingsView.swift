@@ -34,6 +34,9 @@ struct SettingsView: View {
                 languageSection
                 aboutSection
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("Settings")
             .onChange(of: remindersEnabled) { newValue in
                 AppPreferences.setRemindersEnabled(newValue)
@@ -64,153 +67,235 @@ struct SettingsView: View {
 
     private var premiumSection: some View {
         Section("Premium") {
-            if subscriptionAccess.currentTier == .free {
-                NavigationLink {
-                    UpgradeView(
-                        subscriptionAccess: subscriptionAccess,
-                        entryPoint: .settings
-                    )
-                } label: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(L10n.tr("upgrade.entry.settings.title"))
-                            .font(.headline)
-                        Text(L10n.tr("settings.plan.summary.free"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(L10n.tr("settings.plan.summary.active"))
-                        .font(.headline)
-                    Text(L10n.tr("settings.plan.summary.active_detail"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
-            }
-
-            settingValueRow(
-                title: "Current Tier",
-                value: subscriptionAccess.currentTier.localizedTitle
-            )
-
-            if subscriptionAccess.currentTier == .free {
-                settingValueRow(
-                    title: "Free Tier Task Limit",
-                    value: "\(SubscriptionAccessService.freeTaskLimit)"
-                )
-                settingValueRow(
-                    title: "Free History Window",
-                    value: L10n.format(
-                        "settings.plan.free_history_window_value",
-                        SubscriptionAccessService.freeHistoryLookbackDays
-                    )
-                )
-            } else {
-                settingValueRow(
-                    title: "Task Limit",
-                    value: L10n.tr("settings.plan.unlimited")
-                )
-                settingValueRow(
-                    title: "History",
-                    value: L10n.tr("settings.plan.full_history")
-                )
-            }
-
-            if storeKitSubscriptionService.isLoadingProducts {
-                ProgressView("Loading Plans...")
-            } else if subscriptionAccess.currentTier == .free {
-                if storeKitSubscriptionService.products.isEmpty {
-                    Text("No subscription products are available yet.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(storeKitSubscriptionService.products, id: \.id) { product in
-                        Button {
-                            Task {
-                                await storeKitSubscriptionService.purchase(product)
-                            }
+            settingsCard {
+                if subscriptionAccess.currentTier == .free {
+                    cardRow {
+                        NavigationLink {
+                            UpgradeView(
+                                subscriptionAccess: subscriptionAccess,
+                                entryPoint: .settings
+                            )
                         } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(product.displayName)
-                                    Text(L10n.tr("settings.plan.unlock_all"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Text(product.displayPrice)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(L10n.tr("upgrade.entry.settings.title"))
+                                    .font(.headline)
+                                Text(L10n.tr("settings.plan.summary.free"))
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .disabled(
-                            storeKitSubscriptionService.isProcessingPurchase ||
-                            storeKitSubscriptionService.isRestoringPurchases
+                    }
+                } else {
+                    cardRow {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(L10n.tr("settings.plan.summary.active"))
+                                .font(.headline)
+                            Text(L10n.tr("settings.plan.summary.active_detail"))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                cardDivider
+
+                cardRow {
+                    settingValueRow(
+                        title: "Current Tier",
+                        value: subscriptionAccess.currentTier.localizedTitle
+                    )
+                }
+
+                cardDivider
+
+                if subscriptionAccess.currentTier == .free {
+                    cardRow {
+                        settingValueRow(
+                            title: "Free Tier Task Limit",
+                            value: "\(SubscriptionAccessService.freeTaskLimit)"
+                        )
+                    }
+
+                    cardDivider
+
+                    cardRow {
+                        settingValueRow(
+                            title: "Free History Window",
+                            value: L10n.format(
+                                "settings.plan.free_history_window_value",
+                                SubscriptionAccessService.freeHistoryLookbackDays
+                            )
+                        )
+                    }
+                } else {
+                    cardRow {
+                        settingValueRow(
+                            title: "Task Limit",
+                            value: L10n.tr("settings.plan.unlimited")
+                        )
+                    }
+
+                    cardDivider
+
+                    cardRow {
+                        settingValueRow(
+                            title: "History",
+                            value: L10n.tr("settings.plan.full_history")
                         )
                     }
                 }
-            }
 
-            Button("Restore Purchases") {
-                Task {
-                    await storeKitSubscriptionService.restorePurchases()
+                if storeKitSubscriptionService.isLoadingProducts {
+                    cardDivider
+
+                    cardRow {
+                        ProgressView("Loading Plans...")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } else if subscriptionAccess.currentTier == .free {
+                    if storeKitSubscriptionService.products.isEmpty {
+                        cardDivider
+
+                        cardRow {
+                            Text("No subscription products are available yet.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    } else {
+                        ForEach(storeKitSubscriptionService.products, id: \.id) { product in
+                            cardDivider
+
+                            cardRow {
+                                Button {
+                                    Task {
+                                        await storeKitSubscriptionService.purchase(product)
+                                    }
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(product.displayName)
+                                            Text(L10n.tr("settings.plan.unlock_all"))
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Text(product.displayPrice)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .disabled(
+                                    storeKitSubscriptionService.isProcessingPurchase ||
+                                    storeKitSubscriptionService.isRestoringPurchases
+                                )
+                            }
+                        }
+                    }
                 }
-            }
-            .disabled(
-                storeKitSubscriptionService.isProcessingPurchase ||
-                storeKitSubscriptionService.isRestoringPurchases
-            )
 
-            if storeKitSubscriptionService.isProcessingPurchase {
-                Text("Processing purchase...")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+                cardDivider
 
-            if storeKitSubscriptionService.isRestoringPurchases {
-                Text("Restoring purchases...")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+                cardRow {
+                    Button("Restore Purchases") {
+                        Task {
+                            await storeKitSubscriptionService.restorePurchases()
+                        }
+                    }
+                    .disabled(
+                        storeKitSubscriptionService.isProcessingPurchase ||
+                        storeKitSubscriptionService.isRestoringPurchases
+                    )
+                }
 
-            if let errorMessage = storeKitSubscriptionService.errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
+                if storeKitSubscriptionService.isProcessingPurchase {
+                    cardDivider
 
-            if let lastSyncAt = storeKitSubscriptionService.lastSyncAt {
-                Text(L10n.format("settings.plan.last_synced", lastSyncAt.formatted(date: .abbreviated, time: .shortened)))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    cardRow {
+                        Text("Processing purchase...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                if storeKitSubscriptionService.isRestoringPurchases {
+                    cardDivider
+
+                    cardRow {
+                        Text("Restoring purchases...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                if let errorMessage = storeKitSubscriptionService.errorMessage {
+                    cardDivider
+
+                    cardRow {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                if let lastSyncAt = storeKitSubscriptionService.lastSyncAt {
+                    cardDivider
+
+                    cardRow {
+                        Text(L10n.format("settings.plan.last_synced", lastSyncAt.formatted(date: .abbreviated, time: .shortened)))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
             }
         }
     }
 
     private var remindersSection: some View {
         Section("Reminders") {
-            Toggle("Enable Reminders", isOn: $remindersEnabled)
+            settingsCard {
+                cardRow {
+                    Toggle("Enable Reminders", isOn: $remindersEnabled)
+                }
 
-            Stepper(
-                L10n.format("settings.reminders.default_lead_time", reminderOffsetMinutes),
-                value: $reminderOffsetMinutes,
-                in: 5...120,
-                step: 5
-            )
-            .disabled(!remindersEnabled || !subscriptionAccess.isFeatureEnabled(.customReminderWindows))
+                cardDivider
 
-            if !subscriptionAccess.isFeatureEnabled(.customReminderWindows) {
-                Text("Premium unlocks custom reminder lead time.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                NavigationLink("Upgrade to Premium") {
-                    UpgradeView(
-                        subscriptionAccess: subscriptionAccess,
-                        entryPoint: .reminderCustomization
+                cardRow {
+                    Stepper(
+                        L10n.format("settings.reminders.default_lead_time", reminderOffsetMinutes),
+                        value: $reminderOffsetMinutes,
+                        in: 5...120,
+                        step: 5
                     )
+                    .disabled(!remindersEnabled || !subscriptionAccess.isFeatureEnabled(.customReminderWindows))
+                }
+
+                if !subscriptionAccess.isFeatureEnabled(.customReminderWindows) {
+                    cardDivider
+
+                    cardRow {
+                        Text("Premium unlocks custom reminder lead time.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    cardDivider
+
+                    cardRow {
+                        NavigationLink("Upgrade to Premium") {
+                            UpgradeView(
+                                subscriptionAccess: subscriptionAccess,
+                                entryPoint: .reminderCustomization
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -218,44 +303,62 @@ struct SettingsView: View {
 
     private var permissionsSection: some View {
         Section("Permissions") {
-            permissionActionRow(
-                systemImage: "bell.badge",
-                title: "Notifications",
-                detail: "settings.permissions.notifications.detail",
-                status: authorizationState.notificationPermission.localizedTitle,
-                actionTitle: notificationActionTitle,
-                action: handleNotificationPermissionAction
-            )
+            settingsCard {
+                cardRow {
+                    permissionActionRow(
+                        systemImage: "bell.badge",
+                        title: "Notifications",
+                        detail: "settings.permissions.notifications.detail",
+                        status: authorizationState.notificationPermission.localizedTitle,
+                        actionTitle: notificationActionTitle,
+                        action: handleNotificationPermissionAction
+                    )
+                }
 
-            permissionActionRow(
-                systemImage: "figure.child.and.lock",
-                title: "Family Controls",
-                detail: "settings.permissions.family.detail",
-                status: authorizationState.familyControlsAuthorization.localizedTitle,
-                actionTitle: familyControlsActionTitle,
-                action: handleFamilyControlsAction
-            )
+                cardDivider
 
-            if let familyControlsErrorMessage {
-                Text(familyControlsErrorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                cardRow {
+                    permissionActionRow(
+                        systemImage: "figure.child.and.lock",
+                        title: "Family Controls",
+                        detail: "settings.permissions.family.detail",
+                        status: authorizationState.familyControlsAuthorization.localizedTitle,
+                        actionTitle: familyControlsActionTitle,
+                        action: handleFamilyControlsAction
+                    )
+                }
+
+                if let familyControlsErrorMessage {
+                    cardDivider
+
+                    cardRow {
+                        Text(familyControlsErrorMessage)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
             }
         }
     }
 
     private var languageSection: some View {
         Section("Language") {
-            Button {
-                openAppSettings()
-            } label: {
-                HStack {
-                    Text("App Language")
-                    Spacer()
-                    Text(currentAppLanguageDisplayName)
-                        .foregroundStyle(.secondary)
-                    Image(systemName: "arrow.up.right.square")
-                        .foregroundStyle(.secondary)
+            settingsCard {
+                cardRow {
+                    Button {
+                        openAppSettings()
+                    } label: {
+                        HStack {
+                            Text("App Language")
+                            Spacer()
+                            Text(currentAppLanguageDisplayName)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
         }
@@ -263,7 +366,11 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("About") {
-            settingValueRow(title: "Version", value: appVersionText)
+            settingsCard {
+                cardRow {
+                    settingValueRow(title: "Version", value: appVersionText)
+                }
+            }
         }
     }
 
@@ -274,6 +381,28 @@ struct SettingsView: View {
             Text(value)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 0) {
+            content()
+        }
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+
+    private func cardRow<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+    }
+
+    private var cardDivider: some View {
+        Divider()
+            .padding(.leading, 16)
     }
 
     @ViewBuilder
