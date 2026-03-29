@@ -73,45 +73,44 @@ struct TodayView: View {
 
     private var summarySection: some View {
         Section("Summary") {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    SummaryChip(
-                        title: L10n.tr("today.filter.all"),
-                        value: viewModel.scheduledTasks.count,
-                        color: .blue,
-                        isSelected: viewModel.selectedFilter == .all
-                    ) {
-                        viewModel.selectedFilter = .all
-                    }
+            HStack(spacing: 12) {
+                SummaryChip(
+                    title: L10n.tr("today.summary.all_short"),
+                    value: viewModel.scheduledTasks.count,
+                    color: .blue,
+                    isSelected: viewModel.selectedFilter == .all
+                ) {
+                    viewModel.selectedFilter = .all
+                }
 
-                    SummaryChip(
-                        title: L10n.tr("status.missed"),
-                        value: viewModel.missedCount,
-                        color: .red,
-                        isSelected: viewModel.selectedFilter == .missed
-                    ) {
-                        viewModel.selectedFilter = .missed
-                    }
+                SummaryChip(
+                    title: L10n.tr("today.summary.missed_short"),
+                    value: viewModel.missedCount,
+                    color: .red,
+                    isSelected: viewModel.selectedFilter == .missed
+                ) {
+                    viewModel.selectedFilter = .missed
+                }
 
-                    SummaryChip(
-                        title: L10n.tr("status.pending"),
-                        value: viewModel.pendingCount,
-                        color: .orange,
-                        isSelected: viewModel.selectedFilter == .pending
-                    ) {
-                        viewModel.selectedFilter = .pending
-                    }
+                SummaryChip(
+                    title: L10n.tr("today.summary.pending_short"),
+                    value: viewModel.pendingCount,
+                    color: .orange,
+                    isSelected: viewModel.selectedFilter == .pending
+                ) {
+                    viewModel.selectedFilter = .pending
+                }
 
-                    SummaryChip(
-                        title: L10n.tr("status.completed"),
-                        value: viewModel.completedCount,
-                        color: .green,
-                        isSelected: viewModel.selectedFilter == .completed
-                    ) {
-                        viewModel.selectedFilter = .completed
-                    }
+                SummaryChip(
+                    title: L10n.tr("today.summary.completed_short"),
+                    value: viewModel.completedCount,
+                    color: .green,
+                    isSelected: viewModel.selectedFilter == .completed
+                ) {
+                    viewModel.selectedFilter = .completed
                 }
             }
+            .frame(maxWidth: .infinity)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
             .listRowBackground(Color.clear)
@@ -190,16 +189,19 @@ private struct SummaryChip: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(spacing: 8) {
                 Text(title)
-                    .font(.caption)
+                    .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
                     .foregroundStyle(isSelected ? color : .secondary)
                 Text("\(value)")
                     .font(.title3.weight(.semibold))
                     .monospacedDigit()
                     .foregroundStyle(isSelected ? color : .primary)
             }
-            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 60)
+            .padding(.horizontal, 10)
             .padding(.vertical, 12)
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -222,22 +224,22 @@ private struct TodayTaskRow: View {
     let onToggleEnabled: (Bool) -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
                 headerRow
-                appRow
-                metadataRow
+                Spacer(minLength: 12)
+                toggleControl
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(alignment: .trailing, spacing: 12) {
-                Toggle("", isOn: enabledBinding)
-                    .labelsHidden()
-                    .tint(.blue)
-                    .fixedSize()
-
+            HStack(alignment: .center, spacing: 12) {
+                appRow
+                Spacer(minLength: 12)
                 statusTag
+            }
 
+            HStack(alignment: .top, spacing: 12) {
+                metadataRow
+                Spacer(minLength: 12)
                 if task.isEnabled, status != .completed {
                     actionRow
                 }
@@ -255,15 +257,19 @@ private struct TodayTaskRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(task.name)
                 .font(.headline)
+                .lineLimit(1)
 
             Text(task.recurrenceSummary())
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var appRow: some View {
         monitoredAppLabel
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var metadataRow: some View {
@@ -290,9 +296,22 @@ private struct TodayTaskRow: View {
     }
 
     private var actionRow: some View {
-        Button("Mark Completed", action: onComplete)
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
+        Button(action: onComplete) {
+            Label("Mark Completed", systemImage: "checkmark.circle.fill")
+                .labelStyle(.titleAndIcon)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .tint(.accentColor)
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var toggleControl: some View {
+        Toggle("", isOn: enabledBinding)
+            .labelsHidden()
+            .tint(.blue)
+            .fixedSize()
     }
 
     private var enabledBinding: Binding<Bool> {

@@ -19,7 +19,7 @@
 "Edit" = "Edit";
 "Disable" = "Disable";
 "Enable" = "Enable";
-"Mark Completed" = "Manual Check-In";
+"Mark Completed" = "Check";
 "View" = "View";
 "Display" = "Display";
 "Task Filter" = "Task Filter";
@@ -96,9 +96,9 @@
 "launch.title" = "CheckInDuck";
 "launch.subtitle" = "Daily check-ins for what matters today";
 
-"status.pending" = "Pending";
-"status.completed" = "Completed";
-"status.missed" = "Missed";
+"status.pending" = "Todo";
+"status.completed" = "Done";
+"status.missed" = "Miss";
 "authorization.notification.not_determined" = "Not Determined";
 "authorization.notification.denied" = "Denied";
 "authorization.notification.authorized" = "Authorized";
@@ -120,6 +120,10 @@
 "today.deadline_today" = "Due today at %@";
 "today.auto_check_in_threshold" = "Auto check-in threshold: %d min";
 "today.status.disabled" = "Disabled";
+"today.summary.all_short" = "All";
+"today.summary.missed_short" = "Miss";
+"today.summary.pending_short" = "Todo";
+"today.summary.completed_short" = "Done";
 "history.display.by_day" = "By Day";
 "history.display.by_task" = "By Task";
 "history.all_tasks" = "All Tasks";

@@ -19,7 +19,7 @@
 "Edit" = "编辑";
 "Disable" = "停用";
 "Enable" = "启用";
-"Mark Completed" = "手动打卡";
+"Mark Completed" = "打卡";
 "View" = "视图";
 "Display" = "显示方式";
 "Task Filter" = "任务筛选";
@@ -96,9 +96,9 @@
 "launch.title" = "打卡鸭";
 "launch.subtitle" = "记录今天真正重要的打卡计划";
 
-"status.pending" = "待完成";
-"status.completed" = "已完成";
-"status.missed" = "已错过";
+"status.pending" = "待办";
+"status.completed" = "完成";
+"status.missed" = "错过";
 "authorization.notification.not_determined" = "未决定";
 "authorization.notification.denied" = "已拒绝";
 "authorization.notification.authorized" = "已授权";
@@ -120,6 +120,10 @@
 "today.deadline_today" = "今天 %@ 截止";
 "today.auto_check_in_threshold" = "自动打卡阈值：%d 分钟";
 "today.status.disabled" = "已关闭";
+"today.summary.all_short" = "全部";
+"today.summary.missed_short" = "错过";
+"today.summary.pending_short" = "待办";
+"today.summary.completed_short" = "完成";
 "history.display.by_day" = "按日期";
 "history.display.by_task" = "按任务";
 "history.all_tasks" = "全部任务";
