@@ -1,4 +1,5 @@
 import SwiftUI
+import FamilyControls
 
 struct TodayView: View {
     @ObservedObject var viewModel: TodayViewModel
@@ -16,6 +17,9 @@ struct TodayView: View {
                 summarySection
                 tasksSection
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("Today")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -70,7 +74,7 @@ struct TodayView: View {
     private var summarySection: some View {
         Section("Summary") {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     SummaryChip(
                         title: L10n.tr("today.filter.all"),
                         value: viewModel.scheduledTasks.count,
@@ -108,7 +112,9 @@ struct TodayView: View {
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+            .listRowBackground(Color.clear)
         }
     }
 
@@ -117,12 +123,21 @@ struct TodayView: View {
             if viewModel.tasks.isEmpty {
                 Text("No tasks yet. Tap New Task to add one.")
                     .foregroundStyle(.secondary)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
             } else if viewModel.scheduledTasks.isEmpty {
                 Text("No tasks scheduled for today.")
                     .foregroundStyle(.secondary)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
             } else if viewModel.displayedTasks.isEmpty {
                 Text("No tasks match the selected filter.")
                     .foregroundStyle(.secondary)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
             } else {
                 ForEach(viewModel.displayedTasks) { task in
                     TodayTaskRow(
@@ -132,13 +147,14 @@ struct TodayView: View {
                         completionSymbol: viewModel.completionSymbol(for: task)
                     ) {
                         viewModel.markCompleted(taskID: task.id, source: .manual)
+                    } onTap: {
+                        presentEditTask(task)
                     } onToggleEnabled: { isEnabled in
                         viewModel.setEnabled(task: task, isEnabled: isEnabled)
                     }
                     .swipeActions(edge: .leading, allowsFullSwipe: false) {
                         Button {
-                            editTaskViewModel.loadDraft(from: task)
-                            isPresentingEditTask = true
+                            presentEditTask(task)
                         } label: {
                             Label("Edit", systemImage: "pencil")
                         }
@@ -151,9 +167,17 @@ struct TodayView: View {
                             Label("Delete", systemImage: "trash")
                         }
                     }
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
                 }
             }
         }
+    }
+
+    private func presentEditTask(_ task: HabitTask) {
+        editTaskViewModel.loadDraft(from: task)
+        isPresentingEditTask = true
     }
 }
 
@@ -166,18 +190,19 @@ private struct SummaryChip: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(isSelected ? color : .secondary)
                 Text("\(value)")
-                    .font(.headline)
+                    .font(.title3.weight(.semibold))
+                    .monospacedDigit()
                     .foregroundStyle(isSelected ? color : .primary)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -193,51 +218,81 @@ private struct TodayTaskRow: View {
     let completionTimeText: String?
     let completionSymbol: String?
     let onComplete: () -> Void
+    let onTap: () -> Void
     let onToggleEnabled: (Bool) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(task.name)
-                    .font(.headline)
-                Spacer()
-                statusTag
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                headerRow
+                appRow
+                metadataRow
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack {
-                WrappingHStack(horizontalSpacing: 8, verticalSpacing: 8) {
-                    metaTag(
-                        text: TaskTimeFormatter.deadlineBadgeText(task.deadline.displayText),
-                        systemImage: "clock",
-                        tint: .secondary
-                    )
-                    metaTag(
-                        text: TaskTimeFormatter.thresholdBadgeText(seconds: task.usageThresholdSeconds),
-                        systemImage: "timer",
-                        tint: .blue
-                    )
-                    if let completionTimeText, let completionSymbol {
-                        metaTag(
-                            text: completionTimeText,
-                            systemImage: completionSymbol,
-                            tint: .green
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 12) {
                 Toggle("", isOn: enabledBinding)
                     .labelsHidden()
                     .tint(.blue)
                     .fixedSize()
-            }
 
-            if task.isEnabled, status != .completed {
-                Button("Mark Completed", action: onComplete)
-                    .buttonStyle(.borderedProminent)
+                statusTag
+
+                if task.isEnabled, status != .completed {
+                    actionRow
+                }
             }
         }
-        .padding(.vertical, 4)
+        .padding(18)
+        .background(cardSurface)
+        .overlay(cardStroke)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+    }
+
+    private var headerRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(task.name)
+                .font(.headline)
+
+            Text(task.recurrenceSummary())
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var appRow: some View {
+        monitoredAppLabel
+    }
+
+    private var metadataRow: some View {
+        WrappingHStack(horizontalSpacing: 8, verticalSpacing: 8) {
+            metaTag(
+                text: TaskTimeFormatter.deadlineBadgeText(task.deadline.displayText),
+                systemImage: "clock",
+                tint: .secondary
+            )
+            metaTag(
+                text: TaskTimeFormatter.thresholdBadgeText(seconds: task.usageThresholdSeconds),
+                systemImage: "timer",
+                tint: .blue
+            )
+            if let completionTimeText, let completionSymbol {
+                metaTag(
+                    text: completionTimeText,
+                    systemImage: completionSymbol,
+                    tint: .green
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var actionRow: some View {
+        Button("Mark Completed", action: onComplete)
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
     }
 
     private var enabledBinding: Binding<Bool> {
@@ -250,11 +305,25 @@ private struct TodayTaskRow: View {
         )
     }
 
+    @ViewBuilder
+    private var monitoredAppLabel: some View {
+        if
+            let data = task.appSelectionData,
+            let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data),
+            let token = selection.applicationTokens.first
+        {
+            Label(token)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
     private var statusTag: some View {
         Text(statusTitle)
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .background(statusColor.opacity(0.15))
             .foregroundStyle(statusColor)
             .clipShape(Capsule())
@@ -276,6 +345,17 @@ private struct TodayTaskRow: View {
         .background(tint.opacity(0.10))
         .clipShape(Capsule())
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var cardSurface: some View {
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .fill(Color(uiColor: .systemBackground))
+            .shadow(color: Color.black.opacity(0.05), radius: 12, x: 0, y: 4)
+    }
+
+    private var cardStroke: some View {
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
     }
 
     private var statusColor: Color {
