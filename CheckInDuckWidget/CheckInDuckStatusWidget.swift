@@ -81,17 +81,22 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     }
 
     private var smallContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            smallHeader
+        GeometryReader { proxy in
+            let headerHeight = max(proxy.size.height * 0.25, 34)
 
-            if entry.snapshot.tasks.isEmpty {
-                emptyState
-            } else {
-                smallLayout
+            VStack(alignment: .leading, spacing: 12) {
+                smallHeader
+                    .frame(height: headerHeight, alignment: .bottomLeading)
+
+                if entry.snapshot.tasks.isEmpty {
+                    emptyState
+                } else {
+                    smallLayout
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .padding(0)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var mediumContent: some View {
@@ -156,21 +161,19 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     }
 
     private var smallHeader: some View {
-        // 小尺寸小组件头部（应用名 + 任务总数）
-        HStack(alignment: .firstTextBaseline) { // 按文本首行基线对齐，保证文字排版整齐
-            // 应用名称文本
+        HStack(alignment: .firstTextBaseline) {
             Text("CheckInDuck")
-                .font(.system(size: 15, weight: .semibold)) // 字体大小15，半粗体
-                .foregroundStyle(accentTextColor) // 蓝色文字
-                .lineLimit(1) // 限制单行显示
-                .minimumScaleFactor(0.72) // 文字最小缩放比例（防止文字溢出）
-            Spacer(minLength: 4) // 最小间距4的空白分隔，推挤右侧数字到右边
-            // 今日任务总数文本
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(accentTextColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Spacer(minLength: 4)
+
             Text("\(entry.snapshot.tasks.count)")
-                .font(.system(size: 22, weight: .bold)) // 字体大小22，粗体
-                .foregroundStyle(primaryTextColor) // 深浅色模式下都可读的主文字颜色
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(primaryTextColor)
         }
-        .padding(.top, 10)
     }
 
     private var smallLayout: some View {
