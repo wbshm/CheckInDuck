@@ -6,6 +6,7 @@ enum TodayTaskFilter: String, CaseIterable, Identifiable {
     case pending
     case completed
     case missed
+    case notToday
 
     var id: String { rawValue }
 
@@ -19,19 +20,31 @@ enum TodayTaskFilter: String, CaseIterable, Identifiable {
             return L10n.tr("status.completed")
         case .missed:
             return L10n.tr("status.missed")
+        case .notToday:
+            return L10n.tr("today.filter.not_today")
         }
     }
+}
 
-    var status: DailyTaskStatus? {
+enum TodayDisplayStatus: Equatable {
+    case pending
+    case completed
+    case missed
+    case disabled
+    case notToday
+
+    var localizedTitle: String {
         switch self {
-        case .all:
-            return nil
         case .pending:
-            return .pending
+            return L10n.tr("status.pending")
         case .completed:
-            return .completed
+            return L10n.tr("status.completed")
         case .missed:
-            return .missed
+            return L10n.tr("status.missed")
+        case .disabled:
+            return L10n.tr("today.status.disabled")
+        case .notToday:
+            return L10n.tr("today.status.not_today")
         }
     }
 }
@@ -202,6 +215,25 @@ final class TodayViewModel: ObservableObject {
         return status(for: task)
     }
 
+    func displayStatus(for task: HabitTask) -> TodayDisplayStatus {
+        if let todayStatus = visibleStatus(for: task) {
+            switch todayStatus {
+            case .pending:
+                return .pending
+            case .completed:
+                return .completed
+            case .missed:
+                return .missed
+            }
+        }
+
+        if !task.isEnabled {
+            return .disabled
+        }
+
+        return .notToday
+    }
+
     func deadlineText(for task: HabitTask) -> String {
         task.deadline.displayText
     }
@@ -245,14 +277,35 @@ final class TodayViewModel: ObservableObject {
         scheduledTasks.filter { visibleStatus(for: $0) == .pending }.count
     }
 
+    var notTodayCount: Int {
+        tasks.filter { displayStatus(for: $0) == .notToday }.count
+    }
+
     var scheduledTasks: [HabitTask] {
         tasks.filter { $0.occurs(on: nowProvider(), calendar: calendar) }
     }
 
     var displayedTasks: [HabitTask] {
-        orderedTasks(scheduledTasks).filter { task in
-            guard let selectedStatus = selectedFilter.status else { return true }
-            return visibleStatus(for: task) == selectedStatus
+        let baseTasks: [HabitTask]
+        switch selectedFilter {
+        case .all, .notToday:
+            baseTasks = tasks
+        case .pending, .completed, .missed:
+            baseTasks = scheduledTasks
+        }
+        return orderedTasks(baseTasks).filter { task in
+            switch selectedFilter {
+            case .all:
+                return true
+            case .pending:
+                return visibleStatus(for: task) == .pending
+            case .completed:
+                return visibleStatus(for: task) == .completed
+            case .missed:
+                return visibleStatus(for: task) == .missed
+            case .notToday:
+                return displayStatus(for: task) == .notToday
+            }
         }
     }
 
@@ -262,8 +315,8 @@ final class TodayViewModel: ObservableObject {
 
     private func orderedTasks(_ tasks: [HabitTask]) -> [HabitTask] {
         tasks.sorted { lhs, rhs in
-            let lhsStatus = visibleStatus(for: lhs)
-            let rhsStatus = visibleStatus(for: rhs)
+            let lhsStatus = displayStatus(for: lhs)
+            let rhsStatus = displayStatus(for: rhs)
 
             let lhsPriority = sortPriority(for: lhsStatus)
             let rhsPriority = sortPriority(for: rhsStatus)
@@ -283,16 +336,18 @@ final class TodayViewModel: ObservableObject {
         }
     }
 
-    private func sortPriority(for status: DailyTaskStatus?) -> Int {
+    private func sortPriority(for status: TodayDisplayStatus) -> Int {
         switch status {
-        case nil:
-            return 3
         case .missed:
             return 0
         case .pending:
             return 1
         case .completed:
             return 2
+        case .notToday:
+            return 3
+        case .disabled:
+            return 4
         }
     }
 

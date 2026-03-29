@@ -73,10 +73,10 @@ struct TodayView: View {
 
     private var summarySection: some View {
         Section("Summary") {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 SummaryChip(
                     title: L10n.tr("today.summary.all_short"),
-                    value: viewModel.scheduledTasks.count,
+                    value: viewModel.tasks.count,
                     color: .blue,
                     isSelected: viewModel.selectedFilter == .all
                 ) {
@@ -109,6 +109,15 @@ struct TodayView: View {
                 ) {
                     viewModel.selectedFilter = .completed
                 }
+
+                SummaryChip(
+                    title: L10n.tr("today.summary.not_today_short"),
+                    value: viewModel.notTodayCount,
+                    color: .indigo,
+                    isSelected: viewModel.selectedFilter == .notToday
+                ) {
+                    viewModel.selectedFilter = .notToday
+                }
             }
             .frame(maxWidth: .infinity)
             .listRowSeparator(.hidden)
@@ -125,12 +134,6 @@ struct TodayView: View {
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                     .listRowBackground(Color.clear)
-            } else if viewModel.scheduledTasks.isEmpty {
-                Text("No tasks scheduled for today.")
-                    .foregroundStyle(.secondary)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
-                    .listRowBackground(Color.clear)
             } else if viewModel.displayedTasks.isEmpty {
                 Text("No tasks match the selected filter.")
                     .foregroundStyle(.secondary)
@@ -138,10 +141,17 @@ struct TodayView: View {
                     .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                     .listRowBackground(Color.clear)
             } else {
-                ForEach(viewModel.displayedTasks) { task in
+                ForEach(Array(viewModel.displayedTasks.enumerated()), id: \.element.id) { index, task in
+                    if showsNotTodayDivider(before: index, in: viewModel.displayedTasks) {
+                        taskGroupDivider(title: L10n.tr("today.task_group.not_today"))
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 12, leading: 20, bottom: 4, trailing: 20))
+                            .listRowBackground(Color.clear)
+                    }
+
                     TodayTaskRow(
                         task: task,
-                        status: viewModel.visibleStatus(for: task),
+                        status: viewModel.displayStatus(for: task),
                         completionTimeText: viewModel.completionTimeText(for: task),
                         completionSymbol: viewModel.completionSymbol(for: task)
                     ) {
@@ -177,6 +187,25 @@ struct TodayView: View {
     private func presentEditTask(_ task: HabitTask) {
         editTaskViewModel.loadDraft(from: task)
         isPresentingEditTask = true
+    }
+
+    private func showsNotTodayDivider(before index: Int, in tasks: [HabitTask]) -> Bool {
+        guard index < tasks.count else { return false }
+        guard viewModel.displayStatus(for: tasks[index]) == .notToday else { return false }
+        guard index > 0 else { return false }
+        return viewModel.displayStatus(for: tasks[index - 1]) != .notToday
+    }
+
+    private func taskGroupDivider(title: String) -> some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Rectangle()
+                .fill(Color.primary.opacity(0.10))
+                .frame(height: 1)
+        }
     }
 }
 
@@ -216,7 +245,7 @@ private struct SummaryChip: View {
 
 private struct TodayTaskRow: View {
     let task: HabitTask
-    let status: DailyTaskStatus?
+    let status: TodayDisplayStatus
     let completionTimeText: String?
     let completionSymbol: String?
     let onComplete: () -> Void
@@ -240,7 +269,7 @@ private struct TodayTaskRow: View {
             HStack(alignment: .top, spacing: 12) {
                 metadataRow
                 Spacer(minLength: 12)
-                if task.isEnabled, status != .completed {
+                if task.isEnabled, status == .pending {
                     actionRow
                 }
             }
@@ -380,19 +409,21 @@ private struct TodayTaskRow: View {
 
     private var statusColor: Color {
         switch status {
-        case nil:
-            return .secondary
         case .pending:
             return .orange
         case .completed:
             return .green
         case .missed:
             return .red
+        case .disabled:
+            return .secondary
+        case .notToday:
+            return .blue
         }
     }
 
     private var statusTitle: String {
-        status?.localizedTitle ?? L10n.tr("today.status.disabled")
+        status.localizedTitle
     }
 }
 

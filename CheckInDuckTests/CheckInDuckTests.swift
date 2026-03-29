@@ -601,7 +601,8 @@ struct CheckInDuckTests {
         )
 
         #expect(viewModel.scheduledTasks.map(\.name) == ["Daily", "Weekly Today"])
-        #expect(viewModel.displayedTasks.map(\.name) == ["Daily", "Weekly Today"])
+        #expect(viewModel.displayedTasks.map(\.name) == ["Weekly Other Day", "Daily", "Weekly Today"])
+        #expect(viewModel.displayStatus(for: weeklyOtherDayTask) == .notToday)
     }
 
     @MainActor

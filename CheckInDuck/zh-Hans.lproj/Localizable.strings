@@ -122,10 +122,13 @@
 "today.deadline_today" = "今天 %@ 截止";
 "today.auto_check_in_threshold" = "自动打卡阈值：%d 分钟";
 "today.status.disabled" = "已关闭";
+"today.status.not_today" = "非今日";
+"today.task_group.not_today" = "非今日任务";
 "today.summary.all_short" = "全部";
 "today.summary.missed_short" = "错过";
 "today.summary.pending_short" = "待办";
 "today.summary.completed_short" = "完成";
+"today.summary.not_today_short" = "非今日";
 "history.display.by_day" = "按日期";
 "history.display.by_task" = "按任务";
 "history.all_tasks" = "全部任务";
@@ -161,7 +164,8 @@
 "common.none" = "无";
 "common.minutes.short" = "%d 分钟";
 "today.filter.all" = "全部";
-"No tasks scheduled for today." = "今天没有排到任务。";
+"today.filter.not_today" = "非今日";
+"No tasks scheduled for today." = "今天没有排到任务。每周、每月、每年的任务会在对应日期显示。";
 "No tasks match the selected filter." = "当前筛选条件下没有任务。";
 "create_task.selection.categories_websites" = "分类：%d，网站：%d";
 "task.recurrence.daily" = "每日";

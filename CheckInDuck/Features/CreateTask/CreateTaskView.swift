@@ -39,15 +39,17 @@ struct CreateTaskView: View {
                         HStack(spacing: 12) {
                             Text("Choose App")
 
-                            Spacer()
+                            Spacer(minLength: 16)
 
                             HStack(spacing: 8) {
                                 appSelectionValue
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
 
                                 Image(systemName: "chevron.right")
                                     .font(.footnote.weight(.semibold))
                                     .foregroundStyle(.tertiary)
                             }
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                     }
                     .buttonStyle(.plain)

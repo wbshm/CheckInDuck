@@ -122,10 +122,13 @@
 "today.deadline_today" = "Due today at %@";
 "today.auto_check_in_threshold" = "Auto check-in threshold: %d min";
 "today.status.disabled" = "Disabled";
+"today.status.not_today" = "Not Today";
+"today.task_group.not_today" = "Not Today";
 "today.summary.all_short" = "All";
 "today.summary.missed_short" = "Miss";
 "today.summary.pending_short" = "Todo";
 "today.summary.completed_short" = "Done";
+"today.summary.not_today_short" = "Later";
 "history.display.by_day" = "By Day";
 "history.display.by_task" = "By Task";
 "history.all_tasks" = "All Tasks";
@@ -161,7 +164,8 @@
 "common.none" = "None";
 "common.minutes.short" = "%d min";
 "today.filter.all" = "All";
-"No tasks scheduled for today." = "No tasks scheduled for today.";
+"today.filter.not_today" = "Not Today";
+"No tasks scheduled for today." = "No tasks scheduled for today. Weekly, monthly, and yearly tasks will appear on their matching dates.";
 "No tasks match the selected filter." = "No tasks match the selected filter.";
 "create_task.selection.categories_websites" = "Categories: %d, Websites: %d";
 "task.recurrence.daily" = "Daily";
