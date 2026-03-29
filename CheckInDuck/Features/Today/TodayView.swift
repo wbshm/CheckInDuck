@@ -332,6 +332,7 @@ private struct TodayTaskRow: View {
             let token = selection.applicationTokens.first
         {
             Label(token)
+                .id(token)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

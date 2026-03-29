@@ -199,12 +199,14 @@ struct CheckInDuckTests {
     func createTaskViewModelBuildTaskIncludesRecurrenceAndEditingPreservesCreatedDate() async throws {
         let viewModel = CreateTaskViewModel()
         let originalCreatedAt = Date(timeIntervalSince1970: 1_710_000_000)
+        let originalAnchorDate = Date(timeIntervalSince1970: 1_709_740_800)
         let existingTask = HabitTask(
             id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
             name: "Read",
             appSelectionData: Data([0x01]),
             deadline: DailyDeadline(hour: 20, minute: 0),
             recurrence: .weekly,
+            recurrenceAnchorDate: originalAnchorDate,
             usageThresholdSeconds: 180,
             isEnabled: true,
             createdAt: originalCreatedAt,
@@ -214,12 +216,14 @@ struct CheckInDuckTests {
         viewModel.loadDraft(from: existingTask)
         viewModel.taskName = "Read Later"
         viewModel.recurrence = .monthly
+        viewModel.recurrenceAnchorDate = Date(timeIntervalSince1970: 1_709_827_200)
 
         let updatedTask = viewModel.buildTask()
 
         #expect(updatedTask?.id == existingTask.id)
         #expect(updatedTask?.recurrence == .monthly)
         #expect(updatedTask?.createdAt == originalCreatedAt)
+        #expect(updatedTask?.recurrenceAnchorDate == Date(timeIntervalSince1970: 1_709_827_200))
     }
 
     @Test
@@ -505,6 +509,40 @@ struct CheckInDuckTests {
         #expect(components.first?.triggerDate.weekday == calendar.component(.weekday, from: referenceDate))
         #expect(components.first?.triggerDate.hour == 20)
         #expect(components.first?.triggerDate.minute == 30)
+    }
+
+    @Test
+    func reminderScheduleUsesRecurrenceAnchorDateForWeeklyTasks() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600) ?? .current
+        let referenceDate = Date(timeIntervalSince1970: 1_711_728_000)
+        let createdAt = Date(timeIntervalSince1970: 1_710_000_000)
+        let anchorDate = Date(timeIntervalSince1970: 1_711_555_200)
+
+        let service = ReminderSchedulingService(
+            calendar: calendar,
+            nowProvider: { referenceDate }
+        )
+        let task = HabitTask(
+            name: "Workout",
+            appSelectionData: Data([0x01]),
+            deadline: DailyDeadline(hour: 20, minute: 30),
+            recurrence: .weekly,
+            recurrenceAnchorDate: anchorDate,
+            usageThresholdSeconds: 60,
+            isEnabled: true,
+            reminderConfig: ReminderConfig(isEnabled: true, offsetsInMinutes: [0]),
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+
+        let components = service.reminderScheduleComponents(
+            for: task,
+            referenceDate: referenceDate
+        )
+
+        #expect(components.first?.triggerDate.weekday == calendar.component(.weekday, from: anchorDate))
+        #expect(components.first?.triggerDate.weekday != calendar.component(.weekday, from: createdAt))
     }
 
     @MainActor

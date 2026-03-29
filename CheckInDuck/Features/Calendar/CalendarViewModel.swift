@@ -552,7 +552,7 @@ final class CalendarViewModel: ObservableObject {
     private var minimumVisibleDate: Date {
         let todayStart = calendar.startOfDay(for: nowProvider())
         var candidates: [Date] = [todayStart]
-        candidates.append(contentsOf: tasks.map { calendar.startOfDay(for: $0.createdAt) })
+        candidates.append(contentsOf: tasks.map { calendar.startOfDay(for: $0.effectiveRecurrenceStartDate) })
         candidates.append(contentsOf: records.map { calendar.startOfDay(for: $0.date) })
         candidates.append(contentsOf: notes.map { calendar.startOfDay(for: $0.date) })
 
@@ -568,13 +568,16 @@ final class CalendarViewModel: ObservableObject {
 
     private var maximumVisibleDate: Date {
         let todayStart = calendar.startOfDay(for: nowProvider())
+        let latestTaskAnchorDate = tasks
+            .map { calendar.startOfDay(for: $0.effectiveRecurrenceStartDate) }
+            .max() ?? todayStart
         let latestRecordDate = records
             .map { calendar.startOfDay(for: $0.date) }
             .max() ?? todayStart
         let latestNoteDate = notes
             .map { calendar.startOfDay(for: $0.date) }
             .max() ?? todayStart
-        return maxDate(maxDate(todayStart, latestRecordDate), latestNoteDate)
+        return maxDate(maxDate(maxDate(todayStart, latestTaskAnchorDate), latestRecordDate), latestNoteDate)
     }
 
     private func clampedMonthAnchor(_ month: Date) -> Date {

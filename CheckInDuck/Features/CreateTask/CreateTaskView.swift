@@ -33,40 +33,24 @@ struct CreateTaskView: View {
                 }
 
                 Section("Monitored Apps") {
-                    HStack {
-                        Text("Selected")
-                        Spacer()
-                        Text(selectionSummaryText)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Button("Choose Apps") {
+                    Button {
                         isPresentingAppPicker = true
-                    }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text("Choose App")
 
-                    if !selectedApps.applicationTokens.isEmpty {
-                        ForEach(Array(selectedApps.applicationTokens), id: \.self) { token in
-                            Label(token)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 2)
+                            Spacer()
+
+                            HStack(spacing: 8) {
+                                appSelectionValue
+
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                            }
                         }
-                    } else {
-                        Text("No apps selected yet.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
-
-                    if !selectedApps.categoryTokens.isEmpty || !selectedApps.webDomainTokens.isEmpty {
-                        Text(
-                            L10n.format(
-                                "create_task.selection.categories_websites",
-                                selectedApps.categoryTokens.count,
-                                selectedApps.webDomainTokens.count
-                            )
-                        )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    .buttonStyle(.plain)
                 }
 
                 Section("Deadline") {
@@ -77,14 +61,23 @@ struct CreateTaskView: View {
                     )
                 }
 
-                Section {
-                    Picker("Repeat", selection: $viewModel.recurrence) {
+                Section("Repeat") {
+                    Picker("Pattern", selection: $viewModel.recurrence) {
                         ForEach(TaskRecurrence.allCases) { recurrence in
                             Text(recurrence.localizedTitle)
                                 .tag(recurrence)
                         }
                     }
                     .pickerStyle(.menu)
+
+                    if viewModel.recurrence != .daily {
+                        DatePicker(
+                            "Date",
+                            selection: recurrenceAnchorDateBinding,
+                            in: ...Date(),
+                            displayedComponents: .date
+                        )
+                    }
                 }
 
                 Section("Auto Check-in") {
@@ -141,12 +134,17 @@ struct CreateTaskView: View {
         }
     }
 
-    private var selectionSummaryText: String {
-        let count =
-            selectedApps.applicationTokens.count +
-            selectedApps.categoryTokens.count +
-            selectedApps.webDomainTokens.count
-        return count == 0 ? L10n.tr("common.none") : "\(count)"
+    @ViewBuilder
+    private var appSelectionValue: some View {
+        if let token = selectedApps.applicationTokens.first {
+            Label(token)
+                .id(token)
+                .lineLimit(1)
+                .foregroundStyle(.secondary)
+        } else {
+            Text("No apps selected yet.")
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var deadlineDateBinding: Binding<Date> {
@@ -161,6 +159,15 @@ struct CreateTaskView: View {
                 let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
                 viewModel.deadlineHour = components.hour ?? 21
                 viewModel.deadlineMinute = components.minute ?? 0
+            }
+        )
+    }
+
+    private var recurrenceAnchorDateBinding: Binding<Date> {
+        Binding(
+            get: { viewModel.recurrenceAnchorDate },
+            set: { newDate in
+                viewModel.recurrenceAnchorDate = Calendar.current.startOfDay(for: newDate)
             }
         )
     }

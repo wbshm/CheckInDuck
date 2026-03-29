@@ -59,10 +59,12 @@
 "Task" = "任务";
 "Task name" = "任务名称";
 "Repeat" = "重复";
+"Pattern" = "规则";
 "Monitored Apps" = "监控应用";
 "Selected" = "已选择";
 "Choose Apps" = "选择应用";
 "No apps selected yet." = "尚未选择应用。";
+"Date" = "日期";
 "Deadline" = "截止时间";
 "Time" = "时间";
 "Auto Check-in" = "自动打卡";

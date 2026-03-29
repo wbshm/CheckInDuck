@@ -59,10 +59,12 @@
 "Task" = "Task";
 "Task name" = "Task name";
 "Repeat" = "Repeat";
+"Pattern" = "Pattern";
 "Monitored Apps" = "Monitored Apps";
 "Selected" = "Selected";
 "Choose Apps" = "Choose Apps";
 "No apps selected yet." = "No apps selected yet.";
+"Date" = "Date";
 "Deadline" = "Deadline";
 "Time" = "Time";
 "Auto Check-in" = "Auto Check-in";

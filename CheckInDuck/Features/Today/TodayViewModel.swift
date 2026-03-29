@@ -387,6 +387,7 @@ final class TodayViewModel: ObservableObject {
 
     private func monitoringFingerprint(for task: HabitTask) -> String {
         let selectionHash = task.appSelectionData?.base64EncodedString() ?? "none"
-        return "\(task.id.uuidString)|\(task.isEnabled)|\(task.usageThresholdSeconds)|\(task.recurrence.rawValue)|\(selectionHash)"
+        let anchorStamp = ISO8601DateFormatter().string(from: task.effectiveRecurrenceStartDate)
+        return "\(task.id.uuidString)|\(task.isEnabled)|\(task.usageThresholdSeconds)|\(task.recurrence.rawValue)|\(anchorStamp)|\(selectionHash)"
     }
 }
