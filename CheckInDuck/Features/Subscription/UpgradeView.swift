@@ -29,15 +29,15 @@ struct UpgradeView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Premium Benefits") {
+            Section(L10n.tr("Premium Benefits")) {
                 benefitRow("Unlimited tasks")
                 benefitRow("Full history access")
                 benefitRow("Custom reminder lead time")
             }
 
-            Section("Plans") {
+            Section(L10n.tr("Plans")) {
                 if subscriptionAccess.currentTier == .premium {
-                    Label("Premium is active", systemImage: "checkmark.seal.fill")
+                    Label(L10n.tr("Premium is active"), systemImage: "checkmark.seal.fill")
                         .foregroundStyle(.green)
                 } else {
                     Button {
@@ -45,7 +45,7 @@ struct UpgradeView: View {
                             await purchasePreferredProduct()
                         }
                     } label: {
-                        Text("Upgrade Now")
+                        Text(L10n.tr("Upgrade Now"))
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -56,9 +56,9 @@ struct UpgradeView: View {
                     )
 
                     if storeKitSubscriptionService.isLoadingProducts {
-                        ProgressView("Loading Plans...")
+                        ProgressView(L10n.tr("Loading Plans..."))
                     } else if storeKitSubscriptionService.products.isEmpty {
-                        Text("No subscription products are available yet.")
+                        Text(L10n.tr("No subscription products are available yet."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
@@ -83,7 +83,7 @@ struct UpgradeView: View {
                     }
 
                     if preferredProduct == nil {
-                        Button("Reload Plans") {
+                        Button(L10n.tr("Reload Plans")) {
                             Task {
                                 await storeKitSubscriptionService.loadProducts()
                             }
@@ -91,7 +91,7 @@ struct UpgradeView: View {
                     }
                 }
 
-                Button("Restore Purchases") {
+                Button(L10n.tr("Restore Purchases")) {
                     Task {
                         await storeKitSubscriptionService.restorePurchases()
                     }
@@ -102,13 +102,13 @@ struct UpgradeView: View {
                 )
 
                 if storeKitSubscriptionService.isProcessingPurchase {
-                    Text("Processing purchase...")
+                    Text(L10n.tr("Processing purchase..."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 if storeKitSubscriptionService.isRestoringPurchases {
-                    Text("Restoring purchases...")
+                    Text(L10n.tr("Restoring purchases..."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -120,7 +120,7 @@ struct UpgradeView: View {
                 }
             }
         }
-        .navigationTitle("Upgrade")
+        .navigationTitle(L10n.tr("Upgrade"))
         .task {
             if storeKitSubscriptionService.products.isEmpty {
                 await storeKitSubscriptionService.loadProducts()
@@ -131,7 +131,7 @@ struct UpgradeView: View {
 
     @ViewBuilder
     private func benefitRow(_ text: String) -> some View {
-        Label(text, systemImage: "checkmark.circle.fill")
+        Label(L10n.tr(text), systemImage: "checkmark.circle.fill")
             .foregroundStyle(.primary)
     }
 

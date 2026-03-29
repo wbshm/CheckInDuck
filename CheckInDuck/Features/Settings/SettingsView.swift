@@ -37,7 +37,7 @@ struct SettingsView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Settings")
+            .navigationTitle(L10n.tr("Settings"))
             .onChange(of: remindersEnabled) { newValue in
                 AppPreferences.setRemindersEnabled(newValue)
                 scheduleReminderSettingsSyncIfReady()
@@ -66,7 +66,7 @@ struct SettingsView: View {
     }
 
     private var premiumSection: some View {
-        Section("Premium") {
+        Section(L10n.tr("Premium")) {
             settingsCard {
                 if subscriptionAccess.currentTier == .free {
                     cardRow {
@@ -103,7 +103,7 @@ struct SettingsView: View {
 
                 cardRow {
                     settingValueRow(
-                        title: "Current Tier",
+                        title: L10n.tr("Current Tier"),
                         value: subscriptionAccess.currentTier.localizedTitle
                     )
                 }
@@ -113,7 +113,7 @@ struct SettingsView: View {
                 if subscriptionAccess.currentTier == .free {
                     cardRow {
                         settingValueRow(
-                            title: "Free Tier Task Limit",
+                            title: L10n.tr("Free Tier Task Limit"),
                             value: "\(SubscriptionAccessService.freeTaskLimit)"
                         )
                     }
@@ -122,7 +122,7 @@ struct SettingsView: View {
 
                     cardRow {
                         settingValueRow(
-                            title: "Free History Window",
+                            title: L10n.tr("Free History Window"),
                             value: L10n.format(
                                 "settings.plan.free_history_window_value",
                                 SubscriptionAccessService.freeHistoryLookbackDays
@@ -132,7 +132,7 @@ struct SettingsView: View {
                 } else {
                     cardRow {
                         settingValueRow(
-                            title: "Task Limit",
+                            title: L10n.tr("Task Limit"),
                             value: L10n.tr("settings.plan.unlimited")
                         )
                     }
@@ -141,7 +141,7 @@ struct SettingsView: View {
 
                     cardRow {
                         settingValueRow(
-                            title: "History",
+                            title: L10n.tr("History"),
                             value: L10n.tr("settings.plan.full_history")
                         )
                     }
@@ -204,6 +204,9 @@ struct SettingsView: View {
                             await storeKitSubscriptionService.restorePurchases()
                         }
                     }
+                    .buttonStyle(.borderless)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
                     .disabled(
                         storeKitSubscriptionService.isProcessingPurchase ||
                         storeKitSubscriptionService.isRestoringPurchases
@@ -258,7 +261,7 @@ struct SettingsView: View {
     }
 
     private var remindersSection: some View {
-        Section("Reminders") {
+        Section(L10n.tr("Reminders")) {
             settingsCard {
                 cardRow {
                     Toggle("Enable Reminders", isOn: $remindersEnabled)
@@ -302,12 +305,12 @@ struct SettingsView: View {
     }
 
     private var permissionsSection: some View {
-        Section("Permissions") {
+        Section(L10n.tr("Permissions")) {
             settingsCard {
                 cardRow {
                     permissionActionRow(
                         systemImage: "bell.badge",
-                        title: "Notifications",
+                        title: L10n.tr("Notifications"),
                         detail: "settings.permissions.notifications.detail",
                         status: authorizationState.notificationPermission.localizedTitle,
                         actionTitle: notificationActionTitle,
@@ -320,7 +323,7 @@ struct SettingsView: View {
                 cardRow {
                     permissionActionRow(
                         systemImage: "figure.child.and.lock",
-                        title: "Family Controls",
+                        title: L10n.tr("Family Controls"),
                         detail: "settings.permissions.family.detail",
                         status: authorizationState.familyControlsAuthorization.localizedTitle,
                         actionTitle: familyControlsActionTitle,
@@ -343,7 +346,7 @@ struct SettingsView: View {
     }
 
     private var languageSection: some View {
-        Section("Language") {
+        Section(L10n.tr("Language")) {
             settingsCard {
                 cardRow {
                     Button {
@@ -365,10 +368,10 @@ struct SettingsView: View {
     }
 
     private var aboutSection: some View {
-        Section("About") {
+        Section(L10n.tr("About")) {
             settingsCard {
                 cardRow {
-                    settingValueRow(title: "Version", value: appVersionText)
+                    settingValueRow(title: L10n.tr("Version"), value: appVersionText)
                 }
             }
         }
@@ -502,9 +505,9 @@ struct SettingsView: View {
         case .authorized:
             return nil
         case .notDetermined:
-            return "Enable"
+            return L10n.tr("Enable")
         case .denied:
-            return "Open Settings"
+            return L10n.tr("Open Settings")
         }
     }
 
@@ -513,9 +516,9 @@ struct SettingsView: View {
         case .approved:
             return nil
         case .notDetermined:
-            return "Enable"
+            return L10n.tr("Enable")
         case .denied:
-            return "Try Again"
+            return L10n.tr("Try Again")
         }
     }
 
