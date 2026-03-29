@@ -174,19 +174,22 @@ private struct CheckInDuckStatusWidgetEntryView: View {
     }
 
     private var smallLayout: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 12) {
             ForEach(Array(smallListTasks.enumerated()), id: \.element.id) { _, task in
-                HStack(spacing: 12) {
+                HStack(alignment: .top, spacing: 10) {
                     SmallTaskBullet(status: task.status)
 
                     Text(task.title)
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(primaryTextColor)
-                        .lineLimit(1)
+                        .lineLimit(2)
                         .truncationMode(.tail)
-                        .minimumScaleFactor(1)
+                        .allowsTightening(true)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(1)
 
-                    Spacer(minLength: 3)
+                    Spacer(minLength: 6)
 
                     SmallTrailingStatus(status: task.status)
                 }
@@ -472,7 +475,7 @@ private struct SmallTrailingStatus: View {
 
     var body: some View {
         Image(systemName: symbolName)
-            .font(.system(size: 14, weight: .medium))
+            .font(.system(size: 12, weight: .medium))
             .foregroundStyle(symbolColor)
             .frame(width: 12, height: 12)
     }
